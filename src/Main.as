@@ -16,7 +16,7 @@ package
 	public class Main extends Sprite 
 	{
 		var zdk:ZDK;
-		var users:Dictionary;
+		var users:Object;
 		public function Main():void 
 		{
 			if (stage) init();
@@ -27,7 +27,7 @@ package
 		{
 			removeEventListener(Event.ADDED_TO_STAGE, init);
 			debug("From inside flash");
-			
+			users = { };
 			zdk = new ZDK();
 			zdk.addEventListener(UserEvent.USERFOUND, onUserFound);
 			zdk.addEventListener(UserEvent.USERLOST, onUserLost);
@@ -42,7 +42,7 @@ package
 			u.graphics.drawRect(0, 0, 50, 50);
 			u.graphics.endFill();
 			this.addChild(u);
-			debug(u.x);
+			debug("x: " + u.x + " y: " + u.y);
 			users[e.UserId] = u;
 			debug("users set: " + users[e.UserId].x);
 		}
@@ -57,9 +57,9 @@ package
 			
 			for (var userid in users)
 			{
-				debug(userid);
-			}
-		/*		var u:Shape = users[userid];			
+			//	debug(userid);
+			
+				var u:Shape = users[userid];			
 				var pos = zdk.trackedUsers[userid].centerofmass;
 				
 				var point:Point = new Point();
@@ -67,7 +67,7 @@ package
 				point.y = (pos[2] / 4000.0) * 400 - (u.height / 2);
 				u.x = point.x;
 				u.y = point.y;	
-			}*/
+			}
 		}
 		
 		public static function debug(text):void {
