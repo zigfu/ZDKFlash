@@ -6,6 +6,7 @@
 	<meta name="description" content="" />
 	
 	<script src="js/swfobject.js"></script>
+	<script src="js/zig.js"></script>
 	<script>
 		var flashvars = {
 		};
@@ -25,6 +26,32 @@
 			"altContent", "100%", "100%", "10.0.0", 
 			"expressInstall.swf", 
 			flashvars, params, attributes);
+	</script>
+	<script>
+		
+	function getFlashMovie(movieName) {
+		var isIE = navigator.appName.indexOf("Microsoft") != -1;
+		return (isIE) ? window[movieName] : document[movieName];
+	}
+
+	function loaded() {
+		zig.addEventListener('loaded', function() {
+			var flashObj = getFlashMovie("ZDKFlash");
+			console.log(flashObj);
+			zig.findZigObject().addEventListener("NewFrame", function(data) {
+			 	try {
+					var obj = JSON.parse(data); 
+				} catch (e) { 
+					console.log("Error parsing JSON from plugin, skipping frame");
+					return;
+				}
+				flashObj.NewData(obj);
+			});	
+		})
+	}
+
+	document.addEventListener('DOMContentLoaded', function() { setTimeout(loaded(), 2000); });
+
 	</script>
 	<style>
 		html, body { height:100%; overflow:hidden; }

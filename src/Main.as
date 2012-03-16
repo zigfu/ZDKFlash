@@ -12,6 +12,7 @@ package
 	 */
 	public class Main extends Sprite 
 	{
+		var zdk:ZDK;
 		
 		public function Main():void 
 		{
@@ -23,6 +24,7 @@ package
 		{
 			removeEventListener(Event.ADDED_TO_STAGE, init);
 			debug("From inside flash");
+			zdk = new ZDK();
 		}
 		
 		public static function debug(text):void {
