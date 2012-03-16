@@ -24,7 +24,23 @@ package
 		{
 			removeEventListener(Event.ADDED_TO_STAGE, init);
 			debug("From inside flash");
+			
 			zdk = new ZDK();
+			zdk.addEventListener(UserEvent.USERFOUND, onUserFound);
+			zdk.addEventListener(UserEvent.USERLOST, onUserLost);
+			zdk.addEventListener("Update", onFrame);
+		}
+		
+		function onUserFound(e:UserEvent) {
+			debug("User found: " + e.UserId);
+		}
+		
+		function onUserLost(e:UserEvent) {
+			debug("User lost: " + e.UserId);
+		}
+		
+		function onFrame(e:Event) {
+			
 		}
 		
 		public static function debug(text):void {
