@@ -37,12 +37,23 @@
 	function loaded() {
 		zig.addEventListener('loaded', function() {
 			var flashObj = getFlashMovie("ZDKFlash");
-			zig.findZigObject().addEventListener("NewFrame", function(data) {
+			var zigPlugin = zig.findZigObject();
+			zigPlugin.requestStreams({updateImage:true, updateDepth:true, updateLabelMap:true});
+			zigPlugin.addEventListener("NewFrame", function(data) {
 			 	try {
 					var obj = JSON.parse(data); 
 				} catch (e) { 
 					console.log("Error parsing JSON from plugin, skipping frame");
 					return;
+				}
+				if (zigPlugin.depthMap.length > 0) {
+					flashObj.NewDepthMap(zigPlugin.depthMap);
+				}
+				if (zigPlugin.imageMap.length > 0) {
+					flashObj.NewImageMap(zigPlugin.imageMap);
+				}
+				if (zigPlugin.labelMap.length > 0) {
+					flashObj.NewLabelMap(zigPlugin.labelMap);
 				}
 				flashObj.NewData(obj);
 			});	

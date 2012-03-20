@@ -1,10 +1,12 @@
-package  
+package 
 {
 	import adobe.utils.CustomActions;
 	import flash.external.ExternalInterface;
 	import flash.events.EventDispatcher;
 	import flash.events.Event;
 	import flash.geom.Vector3D;
+	import flash.utils.ByteArray;
+	import flash.utils.Endian;
 	
 	public class ZDK extends EventDispatcher {
 		public var trackedUsers:Array;
@@ -13,11 +15,29 @@ package
 		var activeSessionHand:Number = 0;
 		var focusPoint:Vector3D = new Vector3D(0, 0, 0);
 		
+		public static const mapWidth  : int = 160;
+		public static const mapHeight : int = 120;
+		public static const maxDepth  : int = 10000;
+		public var imageMap:ByteArray;
+		public var depthMap:ByteArray;
+		public var labelMap:ByteArray;
+		
 		public function ZDK() {
 			trackedUsers = [];
 			trackedHands = [];
+			imageMap = new ByteArray();
+			imageMap.length = 4 * mapWidth * mapHeight; //32bpp
+			depthMap = new ByteArray();
+			depthMap.length = 2 * mapWidth * mapHeight; //16bpp
+			depthMap.endian = Endian.LITTLE_ENDIAN;
+			labelMap = new ByteArray();
+			labelMap.endian = Endian.LITTLE_ENDIAN;
+			labelMap.length = 2 * mapWidth * mapHeight; //16bpp
 			if (ExternalInterface.available) {
 				ExternalInterface.addCallback("NewData", NewData);
+				ExternalInterface.addCallback("NewImageMap", NewImageMap);
+				ExternalInterface.addCallback("NewDepthMap", NewDepthMap);
+				ExternalInterface.addCallback("NewLabelMap", NewLabelMap);
 			}
 		}
 		
@@ -35,6 +55,31 @@ package
 				handsCount = frame.hands.length;
 				Main.debug('Number of hands: ' + handsCount);
 			}
+		}
+		
+		function NewImageMap(data:String):void {
+			imageMap.position = 0;
+			if (data.length > 0) { 
+				// decode to flash-native 0xAARRGGBB format with alpha hard-coded to 0xFF
+				Base64.decodeRGBToBGRA(data, imageMap);
+			}
+			imageMap.position = 0;
+		}
+		function NewDepthMap(data:String):void {
+			depthMap.position = 0;
+			if (data.length > 0) {
+				// decoded data is little-endian unsigned 16-bit integers
+				Base64.decodeInPlace(data, depthMap);
+			}
+			depthMap.position = 0;
+		}
+		function NewLabelMap(data:String):void {
+			labelMap.position = 0;
+			if (data.length > 0) { 
+				// decoded data is little-endian unsigned 16-bit integers
+				Base64.decodeInPlace(data, labelMap);
+			}
+			labelMap.position = 0;
 		}
 		
 		function ProcessNewUser(userid) {
