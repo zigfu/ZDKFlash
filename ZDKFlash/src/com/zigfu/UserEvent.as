@@ -1,4 +1,4 @@
-package  {
+package com.zigfu {
 	import flash.events.Event;
 	
 	public class UserEvent extends Event

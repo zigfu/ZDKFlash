@@ -14,6 +14,10 @@ package
 	import flash.utils.ByteArray;
 	import flash.utils.Dictionary;
 	
+	import com.zigfu.ZDK;
+	import com.zigfu.UserEvent;
+	import com.zigfu.SessionEvent;
+	
 	/**
 	 * ...
 	 * @author ...

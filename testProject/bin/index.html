@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8"/>
+	<title>ZDKFlash</title>
+	<meta name="description" content="" />
+	
+	<script src="js/swfobject.js"></script>
+	<script src="js/zig.js"></script>
+	<script>
+		var flashvars = {
+		};
+		var params = {
+			menu: "false",
+			scale: "noScale",
+			allowFullscreen: "true",
+			allowScriptAccess: "always",
+			bgcolor: "",
+			wmode: "direct" // can cause issues with FP settings & webcam
+		};
+		var attributes = {
+			id:"ZDKFlash"
+		};
+		swfobject.embedSWF(
+			"testProject.swf", 
+			"altContent", "100%", "100%", "10.0.0", 
+			"expressInstall.swf", 
+			flashvars, params, attributes);
+	</script>
+	<script>
+		
+	function getFlashMovie(movieName) {
+		var isIE = navigator.appName.indexOf("Microsoft") != -1;
+		return (isIE) ? window[movieName] : document[movieName];
+	}
+
+	function loaded() {
+		zig.addEventListener('loaded', function() {
+			var flashObj = getFlashMovie("ZDKFlash");
+			var zigPlugin = zig.findZigObject();
+			zigPlugin.requestStreams({updateImage:true, updateDepth:true, updateLabelMap:true});
+			zigPlugin.addEventListener("NewFrame", function(data) {
+			 	try {
+					var obj = JSON.parse(data); 
+				} catch (e) { 
+					console.log("Error parsing JSON from plugin, skipping frame");
+					return;
+				}
+				if (zigPlugin.depthMap.length > 0) {
+					flashObj.NewDepthMap(zigPlugin.depthMap);
+				}
+				if (zigPlugin.imageMap.length > 0) {
+					flashObj.NewImageMap(zigPlugin.imageMap);
+				}
+				if (zigPlugin.labelMap.length > 0) {
+					flashObj.NewLabelMap(zigPlugin.labelMap);
+				}
+				flashObj.NewData(obj);
+			});	
+		})
+	}
+
+	document.addEventListener('DOMContentLoaded', function() { loaded(); });
+
+	</script>
+	<style>
+		html, body { height:100%; overflow:hidden; }
+		body { margin:0; }
+	</style>
+</head>
+<body>
+<div class="container" style="margin:auto auto">
+	<div id="altContent">
+		<h1>ZDKFlash</h1>
+		<p><a href="http://www.adobe.com/go/getflashplayer">Get Adobe Flash player</a></p>
+	</div>
+</div>
+</body>
+</html>

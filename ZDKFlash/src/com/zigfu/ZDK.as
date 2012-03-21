@@ -1,4 +1,4 @@
-package 
+package com.zigfu
 {
 	import adobe.utils.CustomActions;
 	import flash.external.ExternalInterface;
@@ -49,11 +49,9 @@ package
 			UpdateHands(frame.hands);
 			if (frame.users.length != usersCount) {
 				usersCount = frame.users.length;
-				Main.debug('Number of users: ' + usersCount);
 			}
 			if (frame.hands.length != handsCount) {
 				handsCount = frame.hands.length;
-				Main.debug('Number of hands: ' + handsCount);
 			}
 		}
 		
@@ -133,7 +131,7 @@ package
 				
 				this.dispatchEvent(new Event("Update"));
 			} catch (err:Error) {
-				Main.debug(err.toString());
+				ZDK.debug("ZDK Error: " + err.toString());
 			}
 		}
 		
@@ -165,7 +163,7 @@ package
 				}
 				
 			} catch (err:Error) {
-				Main.debug(err.toString());
+				ZDK.debug("ZDK Error: " + err.toString());
 			}
 		}
 		
@@ -187,5 +185,13 @@ package
 			}
 			return undefined;
 		}
+		
+		public static function debug(text):void {
+			trace(text);
+			if (ExternalInterface.available) {
+				ExternalInterface.call("console.log", text);
+			}
+		}
+
 	}
 }

@@ -1,4 +1,4 @@
-package  {
+package com.zigfu {
 	import flash.events.Event;
 	import flash.geom.Vector3D;
 	
