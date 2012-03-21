@@ -1,2 +1,4 @@
-obj/*
-bin/ZDKFlash.swf
+ZDKFlash/obj/*
+testProject/obj/*
+*.swf
+*.swc
