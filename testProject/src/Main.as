@@ -4,19 +4,35 @@ package
 	import flash.display.BitmapData;
 	import flash.display.DisplayObjectContainer;
 	import flash.display.Shader;
+	import flash.events.AsyncErrorEvent;
+	import flash.events.TextEvent;
 	import flash.external.ExternalInterface;
 	import flash.display.Sprite;
 	import flash.display.Shape;
 	import flash.events.Event;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
+	import flash.media.Video;
+	import flash.net.NetConnection;
+	import flash.net.NetStream;
 	import flash.text.TextField;
 	import flash.utils.ByteArray;
-	import flash.utils.Dictionary;
+	import flash.utils.Dictionary;	
+	import flash.display.StageDisplayState;
+	import flash.events.MouseEvent;
+	import flash.display.SimpleButton;
+	import flash.text.TextFormat;
+	import flash.text.TextFormatAlign;
+	import flash.events.NetStatusEvent;
+	import flash.geom.Matrix;
+	
+	import com.adobe.serialization.json.JSON;
 	
 	import com.zigfu.ZDK;
 	import com.zigfu.UserEvent;
 	import com.zigfu.SessionEvent;
+	
+	import GestureableButton;
 	
 	/**
 	 * ...
@@ -44,47 +60,107 @@ package
 		var labelPixels:ByteArray;
 		var depthPixels:ByteArray;
 		
+		var video:Video;
+		var ns:NetStream;
+
+		var activeButton:GestureableButton;
+		
+		// These will all go in an external conf file
+		static const IDLE_VIDEO:String = 'Content/Filtrete Interactive Section Loop - Idle.f4v';
+		static const BUTTONS_CONF:String = '[' + 
+			'{"label":"Features", "video":"Content/Filtrete Interactive Section 2 - Product.f4v"},' +
+			'{"label":"Filtration level", "video":"Content/Filtrete Interactive Section 3 - Benefits.f4v"},' +
+			'{"label":"Installation", "video":"Content/Filtrete Interactive Section 4 - Installation.f4v"}' +
+		']';
+		
+		// all normalized. should be pixel based??
+		static const BUTTON_WIDTH:Number = 0.15;
+		static const BUTTON_HEIGHT:Number = 0.22;
+		static const BUTTON_PADDING:Number = 0.05;
+		static const BUTTONS_CENTER_X:Number = 0.5;
+		static const BUTTONS_CENTER_Y:Number = 0.65;
+		
+		// not normalized. whatevs
+		static const BUTTONS_FRAME_PADDING:Number = 50;
+		
+		private function playVideo(path:String) {
+			ns.play(path);
+		}
+		
+		private function deactivate() {
+			if (activeButton) {
+				activeButton.setIdle();
+				activeButton = null;
+			}
+			playVideo(IDLE_VIDEO);
+		}
+		
+		private function activate(button:GestureableButton) {
+			if (activeButton) {
+				activeButton.setIdle();
+			}
+			activeButton = button;
+			activeButton.setActive();
+		}
+		
+		private function createButtons() {
+			// parse json
+			try {
+				var buttons_parsed = JSON.decode(BUTTONS_CONF);
+			} catch (e : Error) {
+				debug("Error parsing config: " + e);
+				return;
+			}
+			
+			// quick out
+			if (!buttons_parsed.length) return;
+			
+			// compute total buttons width, and top left corner to start drawing them from
+			var totalWidth:Number = (buttons_parsed.length * BUTTON_WIDTH) + ((buttons_parsed.length - 1) * BUTTON_PADDING);
+			var currTop:Number = BUTTONS_CENTER_Y - (BUTTON_HEIGHT / 2);
+			var currLeft:Number = BUTTONS_CENTER_X - (totalWidth / 2);
+			
+			// create the frame
+			
+			for (var i in buttons_parsed) {
+				// create the button
+				var button:GestureableButton = new GestureableButton(buttons_parsed[i].label, BUTTON_WIDTH * stage.stageWidth, BUTTON_HEIGHT * stage.stageHeight);
+				button.x = stage.stageWidth * currLeft;
+				button.y = stage.stageHeight * currTop;
+				button.addEventListener(MouseEvent.CLICK, (function(curr:Object, b:GestureableButton) { return function() {
+					activate(b);
+					playVideo(curr.video);
+				};})(buttons_parsed[i], button));
+				
+				addChild(button);
+				
+				// advance positions
+				currLeft += BUTTON_WIDTH + BUTTON_PADDING;
+			}
+		}
+		
+		private function rotateVideo(vid:Video, degrees:Number) {
+			// Calculate rotation and offsets
+			var radians:Number = degrees * (Math.PI / 180.0);
+			//var offsetWidth:Number = vid.videoWidth/2.0;
+			//var offsetHeight:Number =  vid.videoHeight/2.0;
+
+			// Perform rotation
+			var matrix:Matrix = new Matrix();
+			//matrix.translate(-offsetWidth, -offsetHeight);
+			matrix.rotate(radians);
+			//matrix.translate(+offsetWidth, +offsetHeight);
+			matrix.concat(vid.transform.matrix);
+			vid.transform.matrix = matrix;
+		}
+		
 		private function init(e:Event = null):void 
 		{
 			removeEventListener(Event.ADDED_TO_STAGE, init);
 
 			// @#$%^
 			stage.align = "TL";
-		
-			var back:Shape = new Shape();
-			back.graphics.lineStyle(6, 0x8080FF, 1);
-			back.graphics.beginFill(0xFFFFFF);
-			back.graphics.drawRect(3, 3, stage.stageWidth-6, stage.stageHeight-6);
-			back.graphics.endFill();
-			addChild(back);
-			try{
-			// image/label/depth displays
-			depthData = new BitmapData(ZDK.mapWidth, ZDK.mapHeight, false);
-			imageData = new BitmapData(ZDK.mapWidth, ZDK.mapHeight, false);
-			labelData = new BitmapData(ZDK.mapWidth, ZDK.mapHeight, false);
-			depthBM = new Bitmap(depthData);
-			imageBM = new Bitmap(imageData);
-			labelBM = new Bitmap(labelData);
-			depthBM.scaleX = depthBM.scaleY = 2;
-			labelBM.scaleX = labelBM.scaleY = 2;
-			imageBM.scaleX = imageBM.scaleY = 2;
-			labelBM.x = 320;
-			imageBM.x = 640;
-			histogram = new Array();
-			for (var i = 0; i < ZDK.maxDepth; i++) {
-				histogram[i] = 0;
-			}
-			labelColors = [0xffff0000, 0xff00ff00, 0xff0000ff];
-			labelPixels = labelData.getPixels(new Rectangle(0, 0, labelData.width, labelData.height));
-			depthPixels = depthData.getPixels(new Rectangle(0, 0, depthData.width, depthData.height));
 			
-			addChild(imageBM);
-			addChild(labelBM);
-			addChild(depthBM);
-			} catch (err:Error) {
-				debug("failed initializing shit");
-				debug(err.toString());
-			}
 			users = { };
 			zdk = new ZDK();
 			zdk.addEventListener(UserEvent.USERFOUND, onUserFound);
@@ -94,6 +170,44 @@ package
 			zdk.addEventListener(SessionEvent.SESSIONSTART, onSessionStart);
 			zdk.addEventListener(SessionEvent.SESSIONUPDATE, onSessionUpdate);
 			zdk.addEventListener(SessionEvent.SESSIONEND, onSessionEnd);
+			
+			var nc:NetConnection = new NetConnection();
+			nc.connect(null);
+			ns = new NetStream(nc);
+			ns.addEventListener(AsyncErrorEvent.ASYNC_ERROR, asyncErrorHandler); 
+			function asyncErrorHandler(event:AsyncErrorEvent):void { 
+				debug("failed to load video");
+				debug(event);
+			}
+			
+			ns.addEventListener(NetStatusEvent.NET_STATUS, statusHandler); 
+			function statusHandler(event:NetStatusEvent):void {
+				switch (event.info.code) { 
+					case "NetStream.Play.Start": break;
+					case "NetStream.Play.Stop": {
+						// deactivate & playidle
+						deactivate();		
+						break;
+					}
+				}
+			}
+			
+			video = new Video(stage.stageWidth, stage.stageHeight);
+			video.attachNetStream(ns);
+
+			var client:Object = new Object(); 
+			client.onMetaData = function(meta:Object) { 
+				video.width = meta.width; 
+				video.height = meta.height; 
+			};
+			ns.client = client;
+			
+			addChild(video);
+
+			// play idle loop
+			ns.play(IDLE_VIDEO); 
+			
+			createButtons();
 		}
 		
 		function onUserFound(e:UserEvent) {
@@ -127,63 +241,6 @@ package
 				u.x = point.x;
 				u.y = point.y;	
 			}
-			
-			//update the various images
-			try{
-			// RGB
-			imageData.setPixels(new Rectangle(0, 0, ZDK.mapWidth, ZDK.mapHeight), zdk.imageMap);
-			//depth
-			for (var i = 0; i < ZDK.maxDepth; i++) {
-				histogram[i] = 0;
-			}
-			var depth:ByteArray = zdk.depthMap;
-			var numPoints:int = 0;
-			depth.position = 0;
-			for (var i = 0; i < ZDK.mapWidth * ZDK.mapHeight; i++) {
-				var pixel:uint = depth.readUnsignedShort();
-				if (pixel > 0) {
-					histogram[pixel]++;
-					numPoints++;
-				}
-			}
-			
-			for (var i = 1; i < ZDK.maxDepth; i++) {
-				histogram[i] += histogram[i-1];
-			}
-			// now convert histogram to pixel values
-			for (var i = 1; i < ZDK.maxDepth; i++) {
-				// doing it all in fixed point
-				var intensity:uint = (255 * (numPoints - histogram[i])) / numPoints;
-				histogram[i] = 0xff000000 | (intensity << 8) | intensity;
-			}
-			histogram[0] = 0xff000000; // set pixel to black
-			// now do a copy through histogram lookup
-			depth.position = 0;
-			depthPixels.position = 0;
-			for (var i = 0; i < ZDK.mapWidth * ZDK.mapHeight; i++) {
-				depthPixels.writeInt(histogram[depth.readUnsignedShort()]);
-			}
-			depthPixels.position = 0;
-			depthData.setPixels(new Rectangle(0, 0, ZDK.mapWidth, ZDK.mapHeight), depthPixels);
-			
-			// user segmentation
-			labelPixels.position = 0;
-			var label:ByteArray = zdk.labelMap;
-			for (var i = 0; i < ZDK.mapWidth * ZDK.mapHeight; i++) {
-				var pixel:uint = label.readUnsignedShort();
-				if (pixel > 0) {
-					labelPixels.writeInt(labelColors[pixel % labelColors.length]);
-				} else {
-					labelPixels.writeInt(0xff000000);
-				}
-			}
-			labelPixels.position = 0;
-			labelData.setPixels(new Rectangle(0, 0, ZDK.mapWidth, ZDK.mapHeight), labelPixels);
-			} catch (err:Error) {
-				debug("failed displaying shit");
-				debug(err.toString());
-			}
-
 		}
 		
 		function onSessionStart(e:SessionEvent) {
