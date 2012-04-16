@@ -64,6 +64,7 @@ package
 		var ns:NetStream;
 
 		var activeButton:GestureableButton;
+		var buttons:Array;
 		
 		// These will all go in an external conf file
 		static const IDLE_VIDEO:String = 'Content/Filtrete Interactive Section Loop - Idle.f4v';
@@ -101,6 +102,8 @@ package
 			}
 			activeButton = button;
 			activeButton.setActive();
+			//rotateVideo(video, 90);
+			debug( { "width" : video.videoWidth, "height" : video.videoHeight } );
 		}
 		
 		private function createButtons() {
@@ -111,6 +114,8 @@ package
 				debug("Error parsing config: " + e);
 				return;
 			}
+			
+			buttons = [];
 			
 			// quick out
 			if (!buttons_parsed.length) return;
@@ -125,31 +130,48 @@ package
 			for (var i in buttons_parsed) {
 				// create the button
 				var button:GestureableButton = new GestureableButton(buttons_parsed[i].label, BUTTON_WIDTH * stage.stageWidth, BUTTON_HEIGHT * stage.stageHeight);
-				button.x = stage.stageWidth * currLeft;
-				button.y = stage.stageHeight * currTop;
+				button.x = /*stage.stageWidth*/ 1024 * currLeft;
+				button.y = /*stage.stageHeight*/ 768 * currTop;
 				button.addEventListener(MouseEvent.CLICK, (function(curr:Object, b:GestureableButton) { return function() {
 					activate(b);
 					playVideo(curr.video);
 				};})(buttons_parsed[i], button));
-				
+				button.visible = false;
 				addChild(button);
+				buttons.push(button);
+				//rotateSprite(button, 90);
 				
 				// advance positions
 				currLeft += BUTTON_WIDTH + BUTTON_PADDING;
 			}
 		}
 		
-		private function rotateVideo(vid:Video, degrees:Number) {
+		private function rotateSprite(spr:Sprite, degrees:Number) {
 			// Calculate rotation and offsets
 			var radians:Number = degrees * (Math.PI / 180.0);
-			//var offsetWidth:Number = vid.videoWidth/2.0;
-			//var offsetHeight:Number =  vid.videoHeight/2.0;
+			var offsetWidth:Number = spr.width/2.0;
+			var offsetHeight:Number =  spr.height/2.0;
 
 			// Perform rotation
 			var matrix:Matrix = new Matrix();
-			//matrix.translate(-offsetWidth, -offsetHeight);
+			matrix.translate(-offsetWidth, -offsetHeight);
 			matrix.rotate(radians);
-			//matrix.translate(+offsetWidth, +offsetHeight);
+			matrix.translate(+offsetWidth, +offsetHeight);
+			matrix.concat(spr.transform.matrix);
+			spr.transform.matrix = matrix;
+		}
+		
+		private function rotateVideo(vid:Video, degrees:Number) {
+			// Calculate rotation and offsets
+			var radians:Number = degrees * (Math.PI / 180.0);
+			var offsetWidth:Number = vid.videoWidth/2.0;
+			var offsetHeight:Number =  vid.videoHeight/2.0;
+
+			// Perform rotation
+			var matrix:Matrix = new Matrix();
+			matrix.translate(-offsetWidth, -offsetHeight);
+			matrix.rotate(radians);
+			matrix.translate(+offsetWidth, +offsetHeight);
 			matrix.concat(vid.transform.matrix);
 			vid.transform.matrix = matrix;
 		}
@@ -192,14 +214,16 @@ package
 				}
 			}
 			
-			video = new Video(stage.stageWidth, stage.stageHeight);
+			video = new Video(1024, 768);
+			//video.rotation = 90;
+			//video.x = 768;
 			video.attachNetStream(ns);
 
 			var client:Object = new Object(); 
-			client.onMetaData = function(meta:Object) { 
+			/*client.onMetaData = function(meta:Object) { 
 				video.width = meta.width; 
 				video.height = meta.height; 
-			};
+			};*/
 			ns.client = client;
 			
 			addChild(video);
@@ -244,15 +268,19 @@ package
 		}
 		
 		function onSessionStart(e:SessionEvent) {
-			debug("Session start");
+			for each (var but:GestureableButton in buttons) {
+				but.visible = true;
+			}
 		}
 		
 		function onSessionUpdate(e:SessionEvent) {
-			debug("Session update: " + e.HandPosition);
+			//debug("Session update: " + e.HandPosition);
 		}
 		
 		function onSessionEnd(e:SessionEvent) {
-			debug("Session end");
+			for each (var but:GestureableButton in buttons) {
+				but.visible = false;
+			}
 		}
 		
 		public static function debug(text):void {
