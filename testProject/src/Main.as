@@ -12,6 +12,7 @@ package
 	import flash.events.Event;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
+	import flash.geom.Vector3D;
 	import flash.media.Video;
 	import flash.net.NetConnection;
 	import flash.net.NetStream;
@@ -64,88 +65,21 @@ package
 		var ns:NetStream;
 
 		var activeButton:GestureableButton;
-		var buttons:Array;
+		var overlay:Overlay;
+		
+		var fader:Fader;
+		var pushDetector:PushDetector;
+		
+		var controls:Array = [];
 		
 		// These will all go in an external conf file
 		static const IDLE_VIDEO:String = 'Content/Filtrete Interactive Section Loop - Idle.f4v';
-		static const BUTTONS_CONF:String = '[' + 
-			'{"label":"Features", "video":"Content/Filtrete Interactive Section 2 - Product.f4v"},' +
-			'{"label":"Filtration level", "video":"Content/Filtrete Interactive Section 3 - Benefits.f4v"},' +
-			'{"label":"Installation", "video":"Content/Filtrete Interactive Section 4 - Installation.f4v"}' +
-		']';
-		
-		// all normalized. should be pixel based??
-		static const BUTTON_WIDTH:Number = 0.15;
-		static const BUTTON_HEIGHT:Number = 0.22;
-		static const BUTTON_PADDING:Number = 0.05;
-		static const BUTTONS_CENTER_X:Number = 0.5;
-		static const BUTTONS_CENTER_Y:Number = 0.65;
-		
-		// not normalized. whatevs
-		static const BUTTONS_FRAME_PADDING:Number = 50;
-		
+			
 		private function playVideo(path:String) {
+			debug("About to play " + path);
 			ns.play(path);
 		}
-		
-		private function deactivate() {
-			if (activeButton) {
-				activeButton.setIdle();
-				activeButton = null;
-			}
-			playVideo(IDLE_VIDEO);
-		}
-		
-		private function activate(button:GestureableButton) {
-			if (activeButton) {
-				activeButton.setIdle();
-			}
-			activeButton = button;
-			activeButton.setActive();
-			//rotateVideo(video, 90);
-			debug( { "width" : video.videoWidth, "height" : video.videoHeight } );
-		}
-		
-		private function createButtons() {
-			// parse json
-			try {
-				var buttons_parsed = JSON.decode(BUTTONS_CONF);
-			} catch (e : Error) {
-				debug("Error parsing config: " + e);
-				return;
-			}
-			
-			buttons = [];
-			
-			// quick out
-			if (!buttons_parsed.length) return;
-			
-			// compute total buttons width, and top left corner to start drawing them from
-			var totalWidth:Number = (buttons_parsed.length * BUTTON_WIDTH) + ((buttons_parsed.length - 1) * BUTTON_PADDING);
-			var currTop:Number = BUTTONS_CENTER_Y - (BUTTON_HEIGHT / 2);
-			var currLeft:Number = BUTTONS_CENTER_X - (totalWidth / 2);
-			
-			// create the frame
-			
-			for (var i in buttons_parsed) {
-				// create the button
-				var button:GestureableButton = new GestureableButton(buttons_parsed[i].label, BUTTON_WIDTH * stage.stageWidth, BUTTON_HEIGHT * stage.stageHeight);
-				button.x = /*stage.stageWidth*/ 1024 * currLeft;
-				button.y = /*stage.stageHeight*/ 768 * currTop;
-				button.addEventListener(MouseEvent.CLICK, (function(curr:Object, b:GestureableButton) { return function() {
-					activate(b);
-					playVideo(curr.video);
-				};})(buttons_parsed[i], button));
-				button.visible = false;
-				addChild(button);
-				buttons.push(button);
-				//rotateSprite(button, 90);
-				
-				// advance positions
-				currLeft += BUTTON_WIDTH + BUTTON_PADDING;
-			}
-		}
-		
+	
 		private function rotateSprite(spr:Sprite, degrees:Number) {
 			// Calculate rotation and offsets
 			var radians:Number = degrees * (Math.PI / 180.0);
@@ -208,79 +142,95 @@ package
 					case "NetStream.Play.Start": break;
 					case "NetStream.Play.Stop": {
 						// deactivate & playidle
-						deactivate();		
+						overlay.deactivate();
+						ns.play(IDLE_VIDEO);
 						break;
 					}
 				}
 			}
 			
 			video = new Video(1024, 768);
-			//video.rotation = 90;
-			//video.x = 768;
 			video.attachNetStream(ns);
-
 			var client:Object = new Object(); 
-			/*client.onMetaData = function(meta:Object) { 
-				video.width = meta.width; 
-				video.height = meta.height; 
-			};*/
 			ns.client = client;
-			
 			addChild(video);
 
 			// play idle loop
 			ns.play(IDLE_VIDEO); 
 			
-			createButtons();
+			overlay = new Overlay(stage.height * 0.9, stage.width * 0.15, [ 
+				{"label":"Features", "video":"Content/Filtrete Interactive Section 2 - Product.f4v"},
+				{"label":"Filtration level", "video":"Content/Filtrete Interactive Section 3 - Benefits.f4v"},
+				{"label":"Installation", "video":"Content/Filtrete Interactive Section 4 - Installation.f4v" }
+			], playVideo);
+			
+			overlay.x = stage.width * 0.45;
+			overlay.y = (stage.height - overlay.height) * 0.5;
+			rotateSprite(overlay, 270);
+			addChild(overlay);
+			
+			fader = new Fader(Fader.ORIENTATION_X, 300);
+			fader.itemsCount = 3;
+			fader.addEventListener(FaderEvent.HOVERSTART, function(fe:FaderEvent) {
+				overlay.hover(fe.fader.hoverItem);
+			});
+			fader.addEventListener(FaderEvent.HOVERSTOP, function(fe:FaderEvent) {
+				overlay.unhover(fe.fader.hoverItem);
+			});
+			
+			pushDetector = new PushDetector();
+			pushDetector.addEventListener(PushDetectorEvent.CLICK, function(pde:PushDetectorEvent) {
+				overlay.activate(fader.hoverItem);
+				debug("Click " + fader.hoverItem);
+			});
+			
+			controls.push(fader);
+			controls.push(pushDetector);
 		}
 		
 		function onUserFound(e:UserEvent) {
-			debug("Flash user: " + e.UserId);
-			var u:Shape = new Shape();
-			u.graphics.lineStyle(4, 0xF233FC, 1);
-			u.graphics.beginFill(0x0000FF);
-			u.graphics.drawRoundRect(0, 0, 40, 40, 20);
-			u.graphics.endFill();
-			this.addChild(u);
-			users[e.UserId] = u;
+			if (!zdk.inSession) {
+				overlay.showSessionPrompt();
+			}
 		}
 		
 		function onUserLost(e:UserEvent) {
-			debug("Flash User lost: " + e.UserId);
-			this.removeChild(users[e.UserId]);
-			delete users[e.UserId];
+			var usersCount = 0;
+			for each (var user in zdk.trackedUsers) usersCount++; // lame
+			if (0 == usersCount) {
+				overlay.hide();
+			}
 		}
 		
 		function onFrame(e:Event) {
-			for (var userid in users)
-			{
-				var u:Shape = users[userid];			
-				var pos = zdk.trackedUsers[userid].centerofmass;
-				
-				var point:Point = new Point();
-				point.x = ((pos[0] / 4000.0) + 0.5);
-				point.y = (pos[2] / 4000.0);
-				point.x = (point.x * stage.stageWidth) - (u.width / 2);
-				point.y = (point.y * stage.stageHeight) - (u.height / 2);
-				u.x = point.x;
-				u.y = point.y;	
-			}
+			
+		}
+		
+		function vectorToArray(v:Vector3D):Array {
+			return [v.x, v.y, v.z];
 		}
 		
 		function onSessionStart(e:SessionEvent) {
-			for each (var but:GestureableButton in buttons) {
-				but.visible = true;
-			}
+			overlay.showButtons();
+			var pos = vectorToArray(e.FocusPosition);
+			controls.forEach(function(cont, i) {
+				cont.onsessionstart(pos);
+			});
 		}
 		
 		function onSessionUpdate(e:SessionEvent) {
-			//debug("Session update: " + e.HandPosition);
+			var pos = vectorToArray(e.HandPosition);
+			controls.forEach(function(cont, i) {
+				cont.onsessionupdate(pos);
+			});
 		}
 		
 		function onSessionEnd(e:SessionEvent) {
-			for each (var but:GestureableButton in buttons) {
-				but.visible = false;
-			}
+			controls.forEach(function(cont, i) {
+				cont.onsessionend();
+			});
+
+			overlay.showSessionPrompt();
 		}
 		
 		public static function debug(text):void {

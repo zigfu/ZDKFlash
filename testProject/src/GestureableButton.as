@@ -6,6 +6,9 @@ package
 	import flash.text.TextFormatAlign;
 	import flash.text.TextField;
 	import flash.display.Sprite;
+	import flash.text.AntiAliasType;
+
+	
 	
 	class GestureableButton extends Sprite {
 		var idleState:Shape;
@@ -13,7 +16,11 @@ package
 		var activeState:Shape;
 		var button:SimpleButton;
 		var label:TextField;
+
+		public var video:String = "";
 		
+		[Embed(source = "../fonts/verdana.ttf",fontFamily="embeddedFont",embedAsCFF="false")] private var embeddedFont:Class;
+	
 		public function GestureableButton(caption:String, width:Number, height:Number) {
 			idleState = new Shape();
 			idleState.graphics.lineStyle(3,0xff1010);
@@ -36,18 +43,19 @@ package
 			button = new SimpleButton();
 			setIdle();
 			
-			var format:TextFormat = new TextFormat();
-			format.font = "Arial";
-			format.color = 0x000000;
+			var format:TextFormat = new TextFormat("embeddedFont");
+			format.color = 0xFFFFFF;
 			format.size = 28;
 			format.bold = false;
 			format.align = TextFormatAlign.CENTER;
 			
 			label = new TextField();
+			label.embedFonts = true;
 			label.width = width;
 			label.height = height;
 			label.selectable = false;
 			label.mouseEnabled = false;
+			label.antiAliasType = AntiAliasType.ADVANCED;
 			label.defaultTextFormat = format;
 			label.text = caption;
 			label.y = (height - 28) / 2;
