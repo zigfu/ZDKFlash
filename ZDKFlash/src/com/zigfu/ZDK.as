@@ -4,6 +4,7 @@ package com.zigfu
 	import flash.external.ExternalInterface;
 	import flash.events.EventDispatcher;
 	import flash.events.Event;
+	import flash.geom.Matrix3D;
 	import flash.geom.Vector3D;
 	import flash.utils.ByteArray;
 	import flash.utils.Endian;
@@ -21,6 +22,8 @@ package com.zigfu
 		public var imageMap:ByteArray;
 		public var depthMap:ByteArray;
 		public var labelMap:ByteArray;
+		
+		public var rotateHands:Boolean = true;
 		
 		public function ZDK() {
 			trackedUsers = [];
@@ -46,6 +49,17 @@ package com.zigfu
 		
 		function NewData(frame: Object) : void {
 			UpdateUsers(frame.users);
+			if (rotateHands) {
+				for (var handid in frame.hands) {
+					var hand = frame.hands[handid];
+					if (this.isUserTracked(hand.userid)) {
+						var rotated:Vector3D = this.rotatePoint(arrayToVector3(hand.position), arrayToVector3(this.trackedUsers[hand.userid].position));
+						hand.position[0] = rotated.x;
+						hand.position[1] = rotated.y;
+						hand.position[2] = rotated.z;
+					}
+				}
+			}
 			UpdateHands(frame.hands);
 			if (frame.users.length != usersCount) {
 				usersCount = frame.users.length;
@@ -195,6 +209,31 @@ package com.zigfu
 			if (ExternalInterface.available) {
 				ExternalInterface.call("console.log", text);
 			}
+		}
+		
+		function rotatePoint(handPos:Vector3D, comPos:Vector3D):Vector3D
+		{
+			// change the forward vector to be u = (CoM - (0,0,0))
+			// instead of (0,0,1)
+			var cx:Number = comPos.x;
+			var cy:Number = comPos.y;
+			var cz:Number = comPos.z;
+			
+			var len:Number = Math.sqrt(cx*cx + cy*cy + cz*cz);
+			// project the vector to XZ plane, so it's actually (cx,0,cz). let's call it v
+			// so cos(angle) = v . u / (|u|*|v|)
+			var lenProjected:Number = Math.sqrt(cx*cx + cz*cz);
+			var cosXrotation:Number = (cx*cx + cz*cz) / (lenProjected * len); // this can be slightly simplified
+			var xRot:Number = Math.acos(cosXrotation);
+			if (cy < 0) xRot = -xRot; // set the sign which we lose in 
+			// now for the angle between v and the (0,0,1) vector for Y-axis rotation
+			var cosYrotation:Number = cz / lenProjected;
+			var yRot:Number = Math.acos(cosYrotation);
+			if (cx > 0) yRot = -yRot;
+			var rotation:Matrix3D = new Matrix3D();
+			rotation.appendRotation(xRot, Vector3D.X_AXIS);
+			rotation.appendRotation(yRot, Vector3D.Y_AXIS);
+			return rotation.transformVector(handPos);
 		}
 
 	}
