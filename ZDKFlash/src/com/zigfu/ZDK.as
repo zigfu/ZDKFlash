@@ -99,6 +99,10 @@ package com.zigfu
 			}
 		}
 		
+		public function get inSession():Boolean{
+			return (0 != activeSessionHand);
+		}
+		
 		function ProcessLostHand(handid) {
 			delete trackedHands[handid];
 			if (handid == activeSessionHand) {
