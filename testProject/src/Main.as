@@ -72,11 +72,13 @@ package
 		
 		var controls:Array = [];
 		
+		var playingContent:Boolean = false;
+		
 		// These will all go in an external conf file
-		static const IDLE_VIDEO:String = 'Content/Filtrete Interactive Section Loop - Idle.f4v';
+		static const IDLE_VIDEO:String = 'Content/Filtrete Interactive Section Loop.f4v';
+		static const ACTIVITY_VIDEO:String = 'Content/Filtrete Interactive Section 1 Shortened.f4v';
 			
 		private function playVideo(path:String) {
-			debug("About to play " + path);
 			ns.play(path);
 		}
 	
@@ -140,12 +142,18 @@ package
 			function statusHandler(event:NetStatusEvent):void {
 				switch (event.info.code) { 
 					case "NetStream.Play.Start": break;
-					case "NetStream.Play.Stop": {
+					case "NetStream.Play.Stop":
 						// deactivate & playidle
 						overlay.deactivate();
-						ns.play(IDLE_VIDEO);
+						// TODO: refactor
+						if (zdk.usersCount == 0) {
+							ns.play(IDLE_VIDEO);
+							playingContent = false;
+						} else {
+							ns.play(ACTIVITY_VIDEO);
+							playingContent = true;
+						}
 						break;
-					}
 				}
 			}
 			
@@ -158,15 +166,17 @@ package
 			// play idle loop
 			ns.play(IDLE_VIDEO); 
 			
-			overlay = new Overlay(stage.height * 0.9, stage.width * 0.15, [ 
-				{"label":"Features", "video":"Content/Filtrete Interactive Section 2 - Product.f4v"},
-				{"label":"Filtration level", "video":"Content/Filtrete Interactive Section 3 - Benefits.f4v"},
-				{"label":"Installation", "video":"Content/Filtrete Interactive Section 4 - Installation.f4v" }
-			], playVideo);
+			overlay = new Overlay(stage.height * 0.5, stage.width * 0.13, [ 
+				{"label":"Features", "video":"Content/Filtrete Interactive Section 2.f4v"},
+				{"label":"Filtration\nlevel", "video":"Content/Filtrete Interactive Section 3.f4v"},
+				{"label":"Installation", "video":"Content/Filtrete Interactive Section 4.f4v" }
+			], function(vid) {
+				playingContent = true;
+				playVideo(vid);
+			});
 			
-			overlay.x = 200;
-			//overlay.x = 0;
-			overlay.y = -60;
+			overlay.x = 460;
+			overlay.y = 105;
 			rotateSprite(overlay, 270);
 			
 			addChild(overlay);
@@ -186,7 +196,6 @@ package
 			pushDetector = new PushDetector();
 			pushDetector.addEventListener(PushDetectorEvent.CLICK, function(pde:PushDetectorEvent) {
 				overlay.activate(fader.hoverItem);
-				debug("Click " + fader.hoverItem);
 			});
 			
 			controls.push(fader);
@@ -197,12 +206,15 @@ package
 			if (!zdk.inSession) {
 				overlay.showSessionPrompt();
 			}
+			if (!playingContent) {
+				playVideo(ACTIVITY_VIDEO);
+				playingContent = true;
+			}
 		}
 		
 		function onUserLost(e:UserEvent) {
 			var usersCount = 0;
-			for each (var user in zdk.trackedUsers) usersCount++; // lame
-			if (0 == usersCount) {
+			if (0 == zdk.usersCount) {
 				overlay.hide();
 			}
 		}
