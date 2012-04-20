@@ -9,7 +9,6 @@ package
 	import flash.text.AntiAliasType;
 
 	
-	
 	class GestureableButton extends Sprite {
 		var idleState:Shape;
 		var hoverState:Shape;
@@ -25,19 +24,19 @@ package
 			idleState = new Shape();
 			idleState.graphics.lineStyle(3,0xff1010);
 			idleState.graphics.beginFill(0xFF0000, 0.3);
-			idleState.graphics.drawRoundRect(0,0,width,height,20);
+			idleState.graphics.drawRoundRect(0,0,width,height,40);
 			idleState.graphics.endFill();
 
 			hoverState = new Shape();
 			hoverState.graphics.lineStyle(3,0xff5555);
 			hoverState.graphics.beginFill(0xFF0000, 0.8);
-			hoverState.graphics.drawRoundRect(0,0,width,height,20);
+			hoverState.graphics.drawRoundRect(0,0,width,height,40);
 			hoverState.graphics.endFill();
 
 			activeState = new Shape();
 			activeState.graphics.lineStyle(3,0x44ff44);
 			activeState.graphics.beginFill(0x00FF00, 0.8);
-			activeState.graphics.drawRoundRect(0,0,width,height,20);
+			activeState.graphics.drawRoundRect(0,0,width,height,40);
 			activeState.graphics.endFill();
 			
 			button = new SimpleButton();
@@ -45,7 +44,7 @@ package
 			
 			var format:TextFormat = new TextFormat("embeddedFont");
 			format.color = 0xFFFFFF;
-			format.size = 28;
+			format.size = 17;
 			format.bold = false;
 			format.align = TextFormatAlign.CENTER;
 			
@@ -58,7 +57,7 @@ package
 			label.antiAliasType = AntiAliasType.ADVANCED;
 			label.defaultTextFormat = format;
 			label.text = caption;
-			label.y = (height - 28) / 2;
+			label.y = (height - label.textHeight) * 0.5;
 			addChild(button);
 			addChild(label);
 		}

@@ -1,6 +1,7 @@
 package  
 {
 	import flash.display.MovieClip;
+	import flash.display.Shader;
 	import flash.display.Sprite;
 	import flash.events.MouseEvent;
 	import flash.display.Shape;
@@ -13,6 +14,7 @@ package
 	import flash.display.GradientType;
 	
 	public class Overlay extends MovieClip {	
+		var overlayMask:Shape;
 		var spriteFrame:Shape;
 		var background:Shape;
 		var spriteButtons:Sprite;
@@ -28,26 +30,30 @@ package
 			
 			// create frame
 			spriteFrame = new Shape();
-			spriteFrame.graphics.lineStyle(3,0xff1010);
-			spriteFrame.graphics.beginFill(0xFF0000, 0.3);
-			spriteFrame.graphics.drawRoundRect(0,0,width,height,20);
+			spriteFrame.graphics.lineStyle(3,0xFFFFFF);
+			spriteFrame.graphics.beginFill(0xFFFFFF, 0.4);
+			spriteFrame.graphics.drawRoundRect(0,0,width,height,40);
 			spriteFrame.graphics.endFill();
+			
+			// mask for background
+			overlayMask = new Shape();
+			overlayMask.graphics.lineStyle(3,0xff1010);
+			overlayMask.graphics.beginFill(0xFF0000, 0.3);
+			overlayMask.graphics.drawRoundRect(0,0,width,height,40);
+			overlayMask.graphics.endFill();
 			
 			// background
 			background = new Shape();
 			var mat:Matrix=new Matrix();
-			var colors=[0xFF0000,0xFFFF00,0x00FF00,0x00FFFF,0x0000FF,0xFF00FF,0xFF0000];
-			var alphas=[1,1,1,1,1,1,1];
-			//255/6=42.5, round off is 42. We want to divide 255 long spectrum
-			//into 6 equally spaced pieces to distribute uniformly 7 colors.
-			var ratios=[0,42,84,126,168,210,255];
+			var colors=[0xFFFF00,0xFFFF00,0xFFFF00,0xFFFF00,0xFFFF00];
+			var alphas=[0,0,1,0,0];
+			var ratios=[0,100,128,156,255];
 			mat.createGradientBox(width * 2, height);
-			//background.width = width * 2;
 			background.graphics.lineStyle();
 			background.graphics.beginGradientFill(GradientType.LINEAR,colors,alphas,ratios,mat);
 			background.graphics.drawRect(0,0,width*2,height);
 			background.graphics.endFill();
-			background.mask = spriteFrame;
+			background.mask = overlayMask;
 			background.x = -(width / 2);
 			background.cacheAsBitmap = true;
 			
@@ -74,12 +80,12 @@ package
 			
 			// create session prompt
 			var tf:TextFormat = new TextFormat("embeddedFont");
-			tf.size = 50;
+			tf.size = 30;
 			tf.bold = false;
 			tf.align = TextFormatAlign.CENTER;
-			tf.color = 0xFFFFFF;
+			tf.color = 0x555555;
 			var lbl:TextField = new TextField();
-			lbl.text = "Raise hand for more info";
+			lbl.text = "Raise hand for more info\n[PLACEHOLDER]";
 			lbl.embedFonts = true;
 			lbl.antiAliasType = AntiAliasType.ADVANCED;
 			lbl.defaultTextFormat = tf;
@@ -89,16 +95,18 @@ package
 			lbl.selectable = false;
 			lbl.mouseEnabled = false;
 			lbl.x = 0;
-			lbl.y = 40;
+			lbl.y = (lbl.height - lbl.textHeight) * 0.5;
 			spriteSessionPrompt = new Sprite();
 			spriteSessionPrompt.addChild(lbl);
 
-			//hide();
-			showSessionPrompt();
+			hide();
+			//showSessionPrompt();
+			//showButtons();
 			
 			// add all overlay objects to parent
 			addChild(spriteFrame);
 			addChild(background);
+			addChild(overlayMask);
 			addChild(spriteButtons);
 			addChild(spriteSessionPrompt);
 		}
@@ -134,12 +142,14 @@ package
 			spriteFrame.visible = true;
 			spriteButtons.visible = true;
 			spriteSessionPrompt.visible = false;
+			background.visible = true;
 		}
 		
 		public function showSessionPrompt() {
 			spriteFrame.visible = true;
 			spriteButtons.visible = false;
 			spriteSessionPrompt.visible = true;
+			background.visible = false;
 		}
 		
 		public function visualizeFader(val:Number) {
@@ -151,6 +161,7 @@ package
 			spriteFrame.visible = false;
 			spriteButtons.visible = false;
 			spriteSessionPrompt.visible = false;
+			background.visible = false;
 		}
 	}
 }
