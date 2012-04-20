@@ -44,28 +44,31 @@ package com.zigfu
 			}
 		}
 		
-		var usersCount:Number = 0;
-		var handsCount:Number = 0;
+		public var usersCount:Number = 0;
+		public var handsCount:Number = 0;
 		
 		function NewData(frame: Object) : void {
-			UpdateUsers(frame.users);
-			if (rotateHands) {
-				for (var handid in frame.hands) {
-					var hand = frame.hands[handid];
-					if (this.isUserTracked(hand.userid)) {
-						var rotated:Vector3D = this.rotatePoint(arrayToVector3(hand.position), arrayToVector3(this.trackedUsers[hand.userid].position));
-						hand.position[0] = rotated.x;
-						hand.position[1] = rotated.y;
-						hand.position[2] = rotated.z;
+			try {
+				usersCount = frame.users.length;
+				UpdateUsers(frame.users);
+				if (rotateHands) {
+					for (var handid in frame.hands) {
+						var hand = frame.hands[handid];
+						if (this.isUserTracked(hand.userid)) {
+							var rotated:Vector3D = this.rotatePoint(arrayToVector3(hand.position), arrayToVector3(this.trackedUsers[hand.userid].centerofmass));
+							hand.position[0] = rotated.x;
+							hand.position[1] = rotated.y;
+							hand.position[2] = rotated.z;
+						}
 					}
 				}
-			}
-			UpdateHands(frame.hands);
-			if (frame.users.length != usersCount) {
-				usersCount = frame.users.length;
-			}
-			if (frame.hands.length != handsCount) {
-				handsCount = frame.hands.length;
+				UpdateHands(frame.hands);
+				if (frame.hands.length != handsCount) {
+					handsCount = frame.hands.length;
+				}
+			} catch (e:Error) {
+				debug("Error processing data from plugin:");
+				debug(e);
 			}
 		}
 		
@@ -94,16 +97,6 @@ package com.zigfu
 			labelMap.position = 0;
 		}
 		
-		function ProcessNewUser(userid) {
-			trackedUsers[userid] = [];
-			this.dispatchEvent(new UserEvent(UserEvent.USERFOUND, userid));
-		}
-		
-		function ProcessLostUser(userid) {
-			delete trackedUsers[userid];
-			this.dispatchEvent(new UserEvent(UserEvent.USERLOST, userid));
-		}
-		
 		function ProcessNewHand(hand) {
 			trackedHands[hand.id] = [];
 			if (0 == activeSessionHand) {
@@ -127,18 +120,23 @@ package com.zigfu
 		
 		function UpdateUsers(users: Array) : void {
 			try {
+				var toRemove:Array = [];
+				var toAdd:Array = [];
+				
 				// get rid of old users
 				for (var userid in this.trackedUsers) {
 					var curruser = this.getItemById(users, userid);
 					if (undefined == curruser) {
-						this.ProcessLostUser(userid);
+						toRemove.push(userid);
+						delete trackedUsers[userid];
 					}
 				}
 				
 				// add new users
 				for (var user in users) {
 					if (!this.isUserTracked(users[user].id)) {
-						this.ProcessNewUser(users[user].id);
+						trackedUsers[userid] = [];
+						toAdd.push(userid);
 					}
 				}
 
@@ -147,6 +145,15 @@ package com.zigfu
 					this.trackedUsers[users[user].id] = users[user];
 				}
 				
+				// send found/lost events
+				for each (var uid in toRemove) {
+					this.dispatchEvent(new UserEvent(UserEvent.USERLOST, uid));
+				}
+				for each (var uid in toAdd) {
+					this.dispatchEvent(new UserEvent(UserEvent.USERFOUND, uid));
+				}				
+
+				// frame event
 				this.dispatchEvent(new Event("Update"));
 			} catch (err:Error) {
 				ZDK.debug("ZDK Error: " + err.toString());
