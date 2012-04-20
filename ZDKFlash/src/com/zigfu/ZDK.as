@@ -238,8 +238,9 @@ package com.zigfu
 			var yRot:Number = Math.acos(cosYrotation);
 			if (cx > 0) yRot = -yRot;
 			var rotation:Matrix3D = new Matrix3D();
-			rotation.appendRotation(xRot, Vector3D.X_AXIS);
-			rotation.appendRotation(yRot, Vector3D.Y_AXIS);
+			// convert angles from radians to degrees
+			rotation.appendRotation(xRot*(180.0/Math.PI), Vector3D.X_AXIS);
+			rotation.appendRotation(yRot*(180.0/Math.PI), Vector3D.Y_AXIS);
 			return rotation.transformVector(handPos);
 		}
 
