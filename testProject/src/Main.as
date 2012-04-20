@@ -164,9 +164,11 @@ package
 				{"label":"Installation", "video":"Content/Filtrete Interactive Section 4 - Installation.f4v" }
 			], playVideo);
 			
-			overlay.x = stage.width * 0.45;
-			overlay.y = (stage.height - overlay.height) * 0.5;
+			overlay.x = 200;
+			//overlay.x = 0;
+			overlay.y = -60;
 			rotateSprite(overlay, 270);
+			
 			addChild(overlay);
 			
 			fader = new Fader(Fader.ORIENTATION_X, 300);
@@ -176,6 +178,9 @@ package
 			});
 			fader.addEventListener(FaderEvent.HOVERSTOP, function(fe:FaderEvent) {
 				overlay.unhover(fe.fader.hoverItem);
+			});
+			fader.addEventListener(FaderEvent.VALUECHANGE, function(fe:FaderEvent) {
+				overlay.visualizeFader(fe.fader.value);
 			});
 			
 			pushDetector = new PushDetector();

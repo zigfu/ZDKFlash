@@ -1,15 +1,20 @@
 package  
 {
+	import flash.display.MovieClip;
 	import flash.display.Sprite;
 	import flash.events.MouseEvent;
 	import flash.display.Shape;
+	import flash.geom.Matrix;
+	import flash.geom.Rectangle;
 	import flash.text.TextField;
 	import flash.text.TextFormat;
 	import flash.text.AntiAliasType;
 	import flash.text.TextFormatAlign;
+	import flash.display.GradientType;
 	
-	public class Overlay extends Sprite {	
+	public class Overlay extends MovieClip {	
 		var spriteFrame:Shape;
+		var background:Shape;
 		var spriteButtons:Sprite;
 		var spriteSessionPrompt:Sprite;
 		
@@ -27,6 +32,24 @@ package
 			spriteFrame.graphics.beginFill(0xFF0000, 0.3);
 			spriteFrame.graphics.drawRoundRect(0,0,width,height,20);
 			spriteFrame.graphics.endFill();
+			
+			// background
+			background = new Shape();
+			var mat:Matrix=new Matrix();
+			var colors=[0xFF0000,0xFFFF00,0x00FF00,0x00FFFF,0x0000FF,0xFF00FF,0xFF0000];
+			var alphas=[1,1,1,1,1,1,1];
+			//255/6=42.5, round off is 42. We want to divide 255 long spectrum
+			//into 6 equally spaced pieces to distribute uniformly 7 colors.
+			var ratios=[0,42,84,126,168,210,255];
+			mat.createGradientBox(width * 2, height);
+			//background.width = width * 2;
+			background.graphics.lineStyle();
+			background.graphics.beginGradientFill(GradientType.LINEAR,colors,alphas,ratios,mat);
+			background.graphics.drawRect(0,0,width*2,height);
+			background.graphics.endFill();
+			background.mask = spriteFrame;
+			background.x = -(width / 2);
+			background.cacheAsBitmap = true;
 			
 			// create buttons
 			spriteButtons = new Sprite();
@@ -70,10 +93,12 @@ package
 			spriteSessionPrompt = new Sprite();
 			spriteSessionPrompt.addChild(lbl);
 
-			hide();
+			//hide();
+			showSessionPrompt();
 			
 			// add all overlay objects to parent
 			addChild(spriteFrame);
+			addChild(background);
 			addChild(spriteButtons);
 			addChild(spriteSessionPrompt);
 		}
@@ -115,6 +140,11 @@ package
 			spriteFrame.visible = true;
 			spriteButtons.visible = false;
 			spriteSessionPrompt.visible = true;
+		}
+		
+		public function visualizeFader(val:Number) {
+			// assumes val is normalized
+			background.x = (val - 1) * height/2; // we're using height and not width because the overlay is rotated -90 degrees
 		}
 		
 		public function hide() {
