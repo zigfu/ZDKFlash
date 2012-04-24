@@ -65,8 +65,17 @@ package
 			var currTop = padding;
 			var currLeft = padding;
 			buttons = [];
+			
+			
+			var i:Number = 0;
 			for each (var currentButton:Object in buttonsJson) {
-				var button:GestureableButton = new GestureableButton(currentButton.label, buttonWidth, buttonHeight);
+				
+				var f:Function = (function(ndx:Number) {
+					return function() { activate(ndx); };
+				})(i);
+				var button:GestureableButton = new GestureableButton(currentButton.label, buttonWidth, buttonHeight, f);
+				i++;
+
 				button.x = currLeft;
 				button.y = currTop;
 				button.video = currentButton.video;
@@ -85,7 +94,7 @@ package
 			tf.align = TextFormatAlign.CENTER;
 			tf.color = 0x555555;
 			var lbl:TextField = new TextField();
-			lbl.text = "Raise hand for more info\n[PLACEHOLDER]";
+			lbl.text = "RAISE HAND FOR MORE INFO";
 			lbl.embedFonts = true;
 			lbl.antiAliasType = AntiAliasType.ADVANCED;
 			lbl.defaultTextFormat = tf;
@@ -125,8 +134,11 @@ package
 		
 		public function activate(n) {
 			deactivate();
-			if (typeof(n) == "Number") n = buttons[n];
-			activeButton = buttons[n];
+			if (typeof(n) == "number") {
+				activeButton = buttons[n];
+			} else {
+				activeButton = n;
+			}
 			activeButton.setActive();
 			buttonClickCB(activeButton.video);
 		}
@@ -154,7 +166,7 @@ package
 		
 		public function visualizeFader(val:Number) {
 			// assumes val is normalized
-			background.x = (val - 1) * height/2; // we're using height and not width because the overlay is rotated -90 degrees
+			background.x = (val - 1) * height / 2; // we're using height and not width because the overlay is rotated -90 degrees
 		}
 		
 		public function hide() {

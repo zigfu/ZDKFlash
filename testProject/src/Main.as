@@ -72,7 +72,8 @@ package
 		
 		var controls:Array = [];
 		
-		var playingContent:Boolean = false;
+		var playingContent:Boolean = false; // non idle
+		var playingProductVideo:Boolean = false; // non idle & activity
 		
 		// These will all go in an external conf file
 		static const IDLE_VIDEO:String = 'Content/Filtrete Interactive Section Loop.f4v';
@@ -146,12 +147,14 @@ package
 						// deactivate & playidle
 						overlay.deactivate();
 						// TODO: refactor
+						playingProductVideo = false;
 						if (zdk.usersCount == 0) {
 							ns.play(IDLE_VIDEO);
 							playingContent = false;
 						} else {
 							ns.play(ACTIVITY_VIDEO);
 							playingContent = true;
+							overlay.showSessionPrompt();
 						}
 						break;
 				}
@@ -166,17 +169,18 @@ package
 			// play idle loop
 			ns.play(IDLE_VIDEO); 
 			
-			overlay = new Overlay(stage.height * 0.5, stage.width * 0.13, [ 
-				{"label":"Features", "video":"Content/Filtrete Interactive Section 2.f4v"},
-				{"label":"Filtration\nlevel", "video":"Content/Filtrete Interactive Section 3.f4v"},
-				{"label":"Installation", "video":"Content/Filtrete Interactive Section 4.f4v" }
+			overlay = new Overlay(stage.height * 0.6, stage.width * 0.10, [ 
+				{"label":"PRODUCT", "video":"Content/Filtrete Interactive Section 2.f4v"},
+				{"label":"BENEFITS", "video":"Content/Filtrete Interactive Section 3.f4v"},
+				{"label":"INSTALLATION", "video":"Content/Filtrete Interactive Section 4.f4v" }
 			], function(vid) {
 				playingContent = true;
+				playingProductVideo = true;
 				playVideo(vid);
 			});
 			
-			overlay.x = 460;
-			overlay.y = 105;
+			overlay.x = 380;
+			overlay.y = 85;
 			rotateSprite(overlay, 270);
 			
 			addChild(overlay);
@@ -203,11 +207,12 @@ package
 		}
 		
 		function onUserFound(e:UserEvent) {
-			if (!zdk.inSession) {
+			if (!zdk.inSession && !playingProductVideo) {
 				overlay.showSessionPrompt();
 			}
 			if (!playingContent) {
 				playVideo(ACTIVITY_VIDEO);
+				playingProductVideo = false;
 				playingContent = true;
 			}
 		}
@@ -246,8 +251,12 @@ package
 			controls.forEach(function(cont, i) {
 				cont.onsessionend();
 			});
-
-			overlay.showSessionPrompt();
+		
+			if (!playingProductVideo) {
+				overlay.showSessionPrompt();
+			} else {
+				overlay.hide();
+			}
 		}
 		
 		public static function debug(text):void {
