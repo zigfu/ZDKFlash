@@ -102,7 +102,7 @@ package com.zigfu
 			if (0 == activeSessionHand) {
 				activeSessionHand = hand.id;
 				focusPoint = arrayToVector3(hand.position);
-				this.dispatchEvent(new SessionEvent(SessionEvent.SESSIONSTART, focusPoint, focusPoint));
+				this.dispatchEvent(new SessionEvent(SessionEvent.SESSIONSTART, focusPoint, focusPoint, hand.userid));
 			}
 		}
 		
