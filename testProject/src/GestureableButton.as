@@ -22,6 +22,7 @@ package
 		var hoverVisualizer:Shape;
 
 		var video:String = "";
+		var caption:String = "";
 		var selectCB:Function;
 		
 		var steadyTimer:Timer;
@@ -33,7 +34,7 @@ package
 	
 		public function GestureableButton(caption:String, width:Number, height:Number, CB:Function) {
 			selectCB = CB;
-			
+			caption = caption;
 			steadyTimer = new Timer(1.0 / 60.0, TIMER_TICK_COUNT);
 			steadyTimer.addEventListener(TimerEvent.TIMER, function(te:TimerEvent) {
 				// the range of values we call visualize is -0.3 to 1

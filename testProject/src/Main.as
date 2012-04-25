@@ -16,6 +16,7 @@ package
 	import flash.media.Video;
 	import flash.net.NetConnection;
 	import flash.net.NetStream;
+	import flash.net.URLRequestHeader;
 	import flash.text.TextField;
 	import flash.utils.ByteArray;
 	import flash.utils.Dictionary;	
@@ -28,6 +29,10 @@ package
 	import flash.geom.Matrix;
 	
 	import com.adobe.serialization.json.JSON;
+	import flash.net.URLLoader;
+	import flash.net.URLVariables;
+	import flash.net.URLRequest;
+	import flash.net.sendToURL;
 	
 	import com.zigfu.ZDK;
 	import com.zigfu.UserEvent;
@@ -117,6 +122,8 @@ package
 		{
 			removeEventListener(Event.ADDED_TO_STAGE, init);
 
+			Track.track("init");
+			
 			// @#$%^
 			stage.align = "TL";
 			
@@ -207,6 +214,8 @@ package
 		}
 		
 		function onUserFound(e:UserEvent) {
+			Track.track('userfound', { 'userid' : e.UserId });
+			
 			if (!zdk.inSession && !playingProductVideo) {
 				overlay.showSessionPrompt();
 			}
@@ -218,6 +227,8 @@ package
 		}
 		
 		function onUserLost(e:UserEvent) {
+			Track.track('userlost', { 'userid' : e.UserId });
+			
 			var usersCount = 0;
 			if (0 == zdk.usersCount) {
 				overlay.hide();
@@ -233,6 +244,8 @@ package
 		}
 		
 		function onSessionStart(e:SessionEvent) {
+			Track.track('sessionstart', { 'userid' : e.UserId});
+			
 			overlay.showButtons();
 			var pos = vectorToArray(e.FocusPosition);
 			controls.forEach(function(cont, i) {
@@ -248,6 +261,8 @@ package
 		}
 		
 		function onSessionEnd(e:SessionEvent) {
+			Track.track('sessionend');
+			
 			controls.forEach(function(cont, i) {
 				cont.onsessionend();
 			});

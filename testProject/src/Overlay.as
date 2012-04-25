@@ -139,6 +139,7 @@ package
 			} else {
 				activeButton = n;
 			}
+			Track.track('select', { 'button' : activeButton.caption } );
 			activeButton.setActive();
 			buttonClickCB(activeButton.video);
 		}
