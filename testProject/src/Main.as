@@ -28,12 +28,6 @@ package
 	import flash.events.NetStatusEvent;
 	import flash.geom.Matrix;
 	
-	import com.adobe.serialization.json.JSON;
-	import flash.net.URLLoader;
-	import flash.net.URLVariables;
-	import flash.net.URLRequest;
-	import flash.net.sendToURL;
-	
 	import com.zigfu.ZDK;
 	import com.zigfu.UserEvent;
 	import com.zigfu.SessionEvent;
