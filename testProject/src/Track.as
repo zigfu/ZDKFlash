@@ -12,6 +12,7 @@ package
 			timestamp = timestamp || (+new Date().time);
 			o['event'] = e;
 			o['timestamp'] = timestamp;
+			Main.debug(o);
 			var req:URLRequest = new URLRequest("http://localhost:1337/log");
 			req.method = "POST";
 			req.requestHeaders.push( new URLRequestHeader("Content-type", "application/json" ));
