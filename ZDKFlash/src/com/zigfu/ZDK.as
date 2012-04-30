@@ -135,8 +135,8 @@ package com.zigfu
 				// add new users
 				for (var user in users) {
 					if (!this.isUserTracked(users[user].id)) {
-						trackedUsers[userid] = [];
-						toAdd.push(userid);
+						trackedUsers[users[user].id] = [];
+						toAdd.push(users[user].id);
 					}
 				}
 
