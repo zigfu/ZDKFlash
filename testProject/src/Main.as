@@ -170,18 +170,18 @@ package
 			// play idle loop
 			ns.play(IDLE_VIDEO); 
 			
-			overlay = new Overlay(stage.height * 0.6, stage.width * 0.10, [ 
-				{"label":"PRODUCT", "video":"Content/Filtrete Interactive Section 2.f4v"},
-				{"label":"BENEFITS", "video":"Content/Filtrete Interactive Section 3.f4v"},
-				{"label":"INSTALLATION", "video":"Content/Filtrete Interactive Section 4.f4v" }
+			overlay = new Overlay(550, 85, [ 
+				{"label":"Product", "video":"Content/Filtrete Interactive Section 2.f4v"},
+				{"label":"Benefits", "video":"Content/Filtrete Interactive Section 3.f4v"},
+				{"label":"Installation", "video":"Content/Filtrete Interactive Section 4.f4v" }
 			], function(vid) {
 				playingContent = true;
 				playingProductVideo = true;
 				playVideo(vid);
 			});
 			
-			overlay.x = 380;
-			overlay.y = 85;
+			overlay.x = 310;
+			overlay.y = -10;
 			rotateSprite(overlay, 270);
 			
 			addChild(overlay);

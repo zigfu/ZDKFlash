@@ -5,6 +5,7 @@ package
 	import flash.display.Sprite;
 	import flash.events.MouseEvent;
 	import flash.display.Shape;
+	import flash.events.TextEvent;
 	import flash.geom.Matrix;
 	import flash.geom.Rectangle;
 	import flash.text.TextField;
@@ -12,6 +13,7 @@ package
 	import flash.text.AntiAliasType;
 	import flash.text.TextFormatAlign;
 	import flash.display.GradientType;
+	import flash.filters.DropShadowFilter;
 	
 	public class Overlay extends MovieClip {	
 		var overlayMask:Shape;
@@ -19,6 +21,8 @@ package
 		var background:Shape;
 		var spriteButtons:Sprite;
 		var spriteSessionPrompt:Sprite;
+		var explanationText:TextField;
+		
 		
 		var activeButton:GestureableButton;
 		var buttons:Array;
@@ -59,7 +63,7 @@ package
 			
 			// create buttons
 			spriteButtons = new Sprite();
-			var padding = 15;
+			var padding = 10;
 			var buttonWidth = (width - ((buttonsJson.length + 1) * padding)) / buttonsJson.length;
 			var buttonHeight = height - (padding * 2);
 			var currTop = padding;
@@ -92,9 +96,9 @@ package
 			tf.size = 30;
 			tf.bold = false;
 			tf.align = TextFormatAlign.CENTER;
-			tf.color = 0x555555;
+			tf.color = 0x222222;
 			var lbl:TextField = new TextField();
-			lbl.text = "RAISE HAND FOR MORE INFO";
+			lbl.text = "WAVE YOUR HAND";
 			lbl.embedFonts = true;
 			lbl.antiAliasType = AntiAliasType.ADVANCED;
 			lbl.defaultTextFormat = tf;
@@ -103,21 +107,42 @@ package
 			lbl.height = height;
 			lbl.selectable = false;
 			lbl.mouseEnabled = false;
+			lbl.filters = [new DropShadowFilter(1)];
 			lbl.x = 0;
 			lbl.y = (lbl.height - lbl.textHeight) * 0.5;
 			spriteSessionPrompt = new Sprite();
 			spriteSessionPrompt.addChild(lbl);
 
-			hide();
+			// explanation text
+			var tf2:TextFormat = new TextFormat("embeddedFont");
+			tf2.size = 25;
+			tf2.bold = false;
+			tf2.align = TextFormatAlign.CENTER;
+			tf2.color = 0x222222;
+
+			explanationText = new TextField();
+			explanationText.text = "Hover Over Selection";
+			explanationText.filters = [new DropShadowFilter(1)];
+			explanationText.embedFonts = true;
+			explanationText.antiAliasType = AntiAliasType.ADVANCED;
+			explanationText.defaultTextFormat = tf2;
+			explanationText.setTextFormat(tf2);
+			explanationText.selectable = false;
+			explanationText.mouseEnabled = false;
+			explanationText.y = height;
+			explanationText.width = width;
+			
+			//hide();
 			//showSessionPrompt();
-			//showButtons();
+			showButtons();
 			
 			// add all overlay objects to parent
-			addChild(spriteFrame);
+			//addChild(spriteFrame);
 			addChild(background);
 			addChild(overlayMask);
 			addChild(spriteButtons);
 			addChild(spriteSessionPrompt);
+			addChild(explanationText);
 		}
 		
 		public function hover(n) {
@@ -139,7 +164,7 @@ package
 			} else {
 				activeButton = n;
 			}
-			Track.track('select', { 'button' : activeButton.caption } );
+			Track.track('select', { 'button' : activeButton.Caption } );
 			activeButton.setActive();
 			buttonClickCB(activeButton.video);
 		}
@@ -156,6 +181,7 @@ package
 			spriteButtons.visible = true;
 			spriteSessionPrompt.visible = false;
 			background.visible = true;
+			explanationText.visible = true;
 		}
 		
 		public function showSessionPrompt() {
@@ -163,6 +189,7 @@ package
 			spriteButtons.visible = false;
 			spriteSessionPrompt.visible = true;
 			background.visible = false;
+			explanationText.visible = false;
 		}
 		
 		public function visualizeFader(val:Number) {
@@ -175,6 +202,7 @@ package
 			spriteButtons.visible = false;
 			spriteSessionPrompt.visible = false;
 			background.visible = false;
+			explanationText.visible = false;
 		}
 	}
 }
