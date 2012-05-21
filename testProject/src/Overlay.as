@@ -132,9 +132,9 @@ package
 			explanationText.y = height;
 			explanationText.width = width;
 			
-			//hide();
+			hide();
 			//showSessionPrompt();
-			showButtons();
+			//showButtons();
 			
 			// add all overlay objects to parent
 			//addChild(spriteFrame);

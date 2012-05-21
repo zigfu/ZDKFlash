@@ -1,0 +1,79 @@
+<items id = "items" relativepath="true">
+
+<item
+path = "TV_btn.swf"
+width = "256"
+height = "256"
+type = "moviefile"
+>
+<title>
+	<![CDATA[TV]]>
+</title>
+<back>back.swf</back>
+</item>
+
+<item
+path = "LowPower_btn.swf"
+width = "256"
+height = "256"
+type = "moviefile"
+>
+<title>
+	<![CDATA[Low Power]]>
+</title>
+<back>back.swf</back>
+</item>
+
+
+<item
+path = "Efficient_btn.swf"
+width = "256"
+height = "256"
+type = "moviefile"
+>
+<title>
+	<![CDATA[Efficient]]>
+</title>
+<back>back.swf</back>
+</item>
+
+
+<item
+path = "Me_btn.swf"
+width = "256"
+height = "256"
+type = "moviefile"
+>
+<title>
+	<![CDATA[Me]]>
+</title>
+<back>back.swf</back>
+</item>
+
+
+<item
+path = "Protect_btn.swf"
+width = "256"
+height = "256"
+type = "moviefile"
+>
+<title>
+	<![CDATA[Protect]]>
+</title>
+<back>back.swf</back>
+</item>
+
+
+<item
+path = "Touch_btn.swf"
+width = "256"
+height = "256"
+type = "moviefile"
+>
+<title>
+	<![CDATA[Touch]]>
+</title>
+<back>back.swf</back>
+</item>
+
+</items>

@@ -1,10 +1,15 @@
 package 
 {
+	import digicrafts.events.ItemEvent;
+	import digicrafts.events.HCIManagerEvent;
+	import digicrafts.flash.controls.DockMenu3D;
+	import digicrafts.events.ResourceLoaderEvent;
 	import flash.display.Bitmap;
 	import flash.display.BitmapData;
 	import flash.display.DisplayObjectContainer;
 	import flash.display.Shader;
 	import flash.events.AsyncErrorEvent;
+	import flash.events.KeyboardEvent;
 	import flash.events.TextEvent;
 	import flash.external.ExternalInterface;
 	import flash.display.Sprite;
@@ -25,8 +30,10 @@ package
 	import flash.display.SimpleButton;
 	import flash.text.TextFormat;
 	import flash.text.TextFormatAlign;
+	import flash.text.AntiAliasType;
 	import flash.events.NetStatusEvent;
 	import flash.geom.Matrix;
+	import flash.text.Font;
 	
 	import com.zigfu.ZDK;
 	import com.zigfu.UserEvent;
@@ -40,6 +47,8 @@ package
 	 */
 	public class Main extends Sprite 
 	{
+		[Embed(source = "../fonts/verdana.ttf", fontFamily = "embeddedFont", embedAsCFF = "false")] public var embeddedFont:Class;
+		
 		var zdk:ZDK;
 		var users:Object;
 		public function Main():void 
@@ -70,6 +79,8 @@ package
 		var pushDetector:PushDetector;
 		
 		var controls:Array = [];
+		
+		var dm3d:DockMenu3D;
 		
 		var playingContent:Boolean = false; // non idle
 		var playingProductVideo:Boolean = false; // non idle & activity
@@ -179,6 +190,7 @@ package
 				playingProductVideo = true;
 				playVideo(vid);
 			});
+		
 			
 			overlay.x = 310;
 			overlay.y = -10;
@@ -195,7 +207,8 @@ package
 				overlay.unhover(fe.fader.hoverItem);
 			});
 			fader.addEventListener(FaderEvent.VALUECHANGE, function(fe:FaderEvent) {
-				overlay.visualizeFader(fe.fader.value);
+				//overlay.visualizeFader(fe.fader.value);
+				dm3d.dispatchEvent(new MouseEvent(MouseEvent.MOUSE_MOVE, true, false, 0.5 * dm3d.width, dm3d.height * fe.fader.value));
 			});
 			
 			pushDetector = new PushDetector();
@@ -205,6 +218,57 @@ package
 			
 			controls.push(fader);
 			controls.push(pushDetector);
+			
+			// dockmenu3d
+			dm3d = new DockMenu3D();
+			dm3d.load("media/menu.xml");
+			dm3d.x = 580;
+			dm3d.y = 330;
+			dm3d.mask = null;
+			dm3d.itemWidth = 52;
+			dm3d.itemHeight = 52;
+			addChild(dm3d);
+			
+			var format:TextFormat = new TextFormat("embeddedFont");
+			format.color = 0xFFFFFF;
+			format.size = 32;
+			format.bold = false;
+			format.align = TextFormatAlign.CENTER;
+			
+			//dm3d.defaultTooltipFormat.;
+			//dm3d.tooltip.label.setTextFormat(format);
+			dm3d.tooltip.label = new TextField();
+			//dm3d.tooltip.label.embedFonts = true;
+			dm3d.tooltip.font = "embeddedFont";
+			dm3d.tooltip.textFormat = format;
+			dm3d.tooltip.label.setTextFormat(format);
+			dm3d.tooltip.label.defaultTextFormat = format;
+			dm3d.tooltip.addChild(dm3d.tooltip.label);
+			//dm3d.tooltip.label.antiAliasType = AntiAliasType.ADVANCED;
+			//dm3d.tooltip.label.embedFonts = true;
+			dm3d.visible = false;
+					
+			
+			dm3d.addEventListener(HCIManagerEvent.TOUCH_DOWN, function(e:Object) {
+				debug("down " + e.localX);
+			});
+			
+			dm3d.addEventListener(HCIManagerEvent.TOUCH_UP, function(e:Object) {
+				debug("up " + e.localX);
+			});
+			
+			dm3d.addEventListener(HCIManagerEvent.MOVE, function(e:Object) {
+				debug("move " + e.localX);
+			});
+			
+			dm3d.addEventListener(Event.MOUSE_LEAVE, function(e:Object) {
+				debug("mouse leave");
+			});
+			
+			stage.addEventListener(KeyboardEvent.KEY_DOWN, function(e:KeyboardEvent) {
+				rotateSprite(dm3d, 270);
+				dm3d.visible = true;
+			});
 		}
 		
 		function onUserFound(e:UserEvent) {
@@ -240,7 +304,10 @@ package
 		function onSessionStart(e:SessionEvent) {
 			Track.track('sessionstart', { 'userid' : e.UserId});
 			
-			overlay.showButtons();
+			//overlay.showButtons();
+			
+			dm3d.dispatchEvent(new MouseEvent(MouseEvent.MOUSE_OVER, true, false, 0.5 * dm3d.width, 0.5 * dm3d.height));
+			
 			var pos = vectorToArray(e.FocusPosition);
 			controls.forEach(function(cont, i) {
 				cont.onsessionstart(pos);
@@ -257,15 +324,18 @@ package
 		function onSessionEnd(e:SessionEvent) {
 			Track.track('sessionend');
 			
+			dm3d.dispatchEvent(new MouseEvent(MouseEvent.MOUSE_OUT));
+			
 			controls.forEach(function(cont, i) {
 				cont.onsessionend();
 			});
 		
+			/*
 			if (!playingProductVideo) {
 				overlay.showSessionPrompt();
 			} else {
 				overlay.hide();
-			}
+			}*/
 		}
 		
 		public static function debug(text):void {

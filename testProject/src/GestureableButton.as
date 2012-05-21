@@ -32,7 +32,8 @@ package
 		var startTime:Number;
 		var TIMER_TICK_COUNT:Number = 60 * 1.5; // 60 FPS * time in seconds
 		
-		[Embed(source = "../fonts/verdana.ttf", fontFamily = "embeddedFont", embedAsCFF = "false")] private var embeddedFont:Class;
+		//[Embed(source = "../fonts/verdana.ttf", fontFamily = "embeddedFont", embedAsCFF = "false")] private var embeddedFont:Class;
+		//[Embed(source = "../fonts/verdana.ttf", fontFamily = "embeddedFont", embedAsCFF = "false")] private var embeddedFont:Class;
 		[Embed(source = "../fonts/verdanab.ttf",fontFamily="embeddedFont",fontWeight="bold",embedAsCFF="false")] private var embeddedBoldFont:Class;
 	
 		public function GestureableButton(caption:String, width:Number, height:Number, CB:Function) {
