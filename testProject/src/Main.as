@@ -1,6 +1,7 @@
 package 
 {
 	import digicrafts.events.ItemEvent;
+	import digicrafts.events.DataSourceEvent;
 	import digicrafts.events.HCIManagerEvent;
 	import digicrafts.flash.controls.DockMenu3D;
 	import digicrafts.events.ResourceLoaderEvent;
@@ -24,7 +25,8 @@ package
 	import flash.net.URLRequestHeader;
 	import flash.text.TextField;
 	import flash.utils.ByteArray;
-	import flash.utils.Dictionary;	
+	import flash.utils.Dictionary;
+	import flash.utils.setTimeout;
 	import flash.display.StageDisplayState;
 	import flash.events.MouseEvent;
 	import flash.display.SimpleButton;
@@ -40,6 +42,12 @@ package
 	import com.zigfu.SessionEvent;
 	
 	import GestureableButton;
+	
+	//internals of the DockMenu3D control
+	import away3d.containers.View3D;
+	import digicrafts.album.screen.Screen3D;
+	import digicrafts.album.DockMenu3D;
+	import away3d.events.MouseEvent3D;
 	
 	/**
 	 * ...
@@ -80,7 +88,12 @@ package
 		
 		var controls:Array = [];
 		
-		var dm3d:DockMenu3D;
+		var dm3d:digicrafts.flash.controls.DockMenu3D;
+		var view:View3D;
+		var mouseStartX:Number;
+		var mouseWidth:Number;
+		var mouseStartY:Number;
+		
 		
 		var playingContent:Boolean = false; // non idle
 		var playingProductVideo:Boolean = false; // non idle & activity
@@ -208,7 +221,8 @@ package
 			});
 			fader.addEventListener(FaderEvent.VALUECHANGE, function(fe:FaderEvent) {
 				//overlay.visualizeFader(fe.fader.value);
-				dm3d.dispatchEvent(new MouseEvent(MouseEvent.MOUSE_MOVE, true, false, 0.5 * dm3d.width, dm3d.height * fe.fader.value));
+				//dm3d.dispatchEvent(new MouseEvent(MouseEvent.MOUSE_MOVE, true, false, 0.5 * dm3d.width, dm3d.height * fe.fader.value));
+				view.fireMouseEvent(MouseEvent3D.MOUSE_MOVE, mouseStartX + fe.fader.value * mouseWidth, mouseStartY);
 			});
 			
 			pushDetector = new PushDetector();
@@ -220,7 +234,15 @@ package
 			controls.push(pushDetector);
 			
 			// dockmenu3d
-			dm3d = new DockMenu3D();
+			dm3d = new digicrafts.flash.controls.DockMenu3D();
+			dm3d.addEventListener(DataSourceEvent.BUFFER_COMPLETE , function(e:Object) { 
+				setTimeout(function() {
+					rotateSprite(dm3d, 270);
+					dm3d.visible = true;
+					setTimeout(setupMouse, 500);
+				}, 200);
+			});
+
 			dm3d.load("media/menu.xml");
 			dm3d.x = 580;
 			dm3d.y = 330;
@@ -265,10 +287,10 @@ package
 				debug("mouse leave");
 			});
 			
-			stage.addEventListener(KeyboardEvent.KEY_DOWN, function(e:KeyboardEvent) {
-				rotateSprite(dm3d, 270);
-				dm3d.visible = true;
-			});
+			//stage.addEventListener(KeyboardEvent.KEY_DOWN, function(e:KeyboardEvent) {
+			//	rotateSprite(dm3d, 270);
+			//	dm3d.visible = true;
+			//});
 		}
 		
 		function onUserFound(e:UserEvent) {
@@ -306,7 +328,9 @@ package
 			
 			//overlay.showButtons();
 			
-			dm3d.dispatchEvent(new MouseEvent(MouseEvent.MOUSE_OVER, true, false, 0.5 * dm3d.width, 0.5 * dm3d.height));
+			// fake mouse over in a way that doesn't check internally whether the mouse is actually
+			// hovering over the control in a way we can't intercept
+			view.dispatchEvent(new MouseEvent(MouseEvent.ROLL_OVER)); 
 			
 			var pos = vectorToArray(e.FocusPosition);
 			controls.forEach(function(cont, i) {
@@ -324,7 +348,8 @@ package
 		function onSessionEnd(e:SessionEvent) {
 			Track.track('sessionend');
 			
-			dm3d.dispatchEvent(new MouseEvent(MouseEvent.MOUSE_OUT));
+			// fake mouse leaving the dock
+			view.dispatchEvent(new MouseEvent(MouseEvent.ROLL_OUT)); 
 			
 			controls.forEach(function(cont, i) {
 				cont.onsessionend();
@@ -336,6 +361,13 @@ package
 			} else {
 				overlay.hide();
 			}*/
+		}
+		
+		function setupMouse() {
+			view = ((dm3d.getChildAt(0) as digicrafts.album.DockMenu3D).getChildAt(0) as Screen3D).getChildAt(0) as View3D;
+			mouseStartX = -dm3d.width / 3;
+			mouseWidth = (dm3d.width * 2) / 3;
+			mouseStartY = 50; //TODO:?
 		}
 		
 		public static function debug(text):void {
