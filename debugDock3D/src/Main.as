@@ -1,11 +1,17 @@
 package 
 {
 	import away3d.containers.View3D;
+	import away3d.core.base.Object3D;
+	import away3d.core.project.MovieClipSpriteProjector;
 	import away3d.events.MouseEvent3D;
 	import away3d.containers.setvar;
+	import away3d.materials.MovieMaterial;
 	import digicrafts.album.screen.Screen3D;
+	import digicrafts.album.screen.away3d.ScreenA3D;
 	import digicrafts.utils.hci.AbstractHCIManager;
 	import digicrafts.utils.hci.GeneralHCIManager;
+	import flash.display.MovieClip;
+	import flash.display.Scene;
 	import flash.display.Sprite;
 	import flash.events.Event;
 		import digicrafts.events.ItemEvent;
@@ -19,6 +25,7 @@ package
 	import flash.display.DisplayObjectContainer;
 	import flash.display.Shader;
 	import flash.events.AsyncErrorEvent;
+	import flash.events.IEventDispatcher;
 	import flash.events.KeyboardEvent;
 	import flash.events.TextEvent;
 	import flash.events.TouchEvent;
@@ -157,20 +164,20 @@ package
 			//debug("fasdfasdf");
 					
 			dm3d.addEventListener(HCIManagerEvent.TOUCH_DOWN, function(e:Object) {
-				debug("down " + e.localX);
+				//debug("down " + e.localX);
 			});
 			
 			dm3d.addEventListener(HCIManagerEvent.TOUCH_UP, function(e:Object) {
-				debug("up " + e.localX);
+				//debug("up " + e.localX);
 			});
 			
 			dm3d.addEventListener(HCIManagerEvent.MOVE, function(e:Object) {
-				debug("move " + e.localX);
-				debug(e.target.name);
+				//debug("move " + e.localX);
+				//debug(e.target.name);
 			});
 			
 			dm3d.addEventListener(Event.MOUSE_LEAVE, function(e:Object) {
-				debug("mouse leave");
+				//debug("mouse leave");
 			});
 			
 			stage.addEventListener(KeyboardEvent.KEY_DOWN, function(e:KeyboardEvent) {
@@ -193,12 +200,13 @@ package
 			addChild(mouseSurface);
 			
 		}
-		
+		var v:View3D;
 		public function doCrap()
 		{
 			var blah2:digicrafts.album.DockMenu3D = dm3d.getChildAt(0) as digicrafts.album.DockMenu3D;
 			var screen:Screen3D = blah2.getChildAt(0) as Screen3D;
 			var view:View3D = screen.getChildAt(0) as View3D;
+			v = view;
 			
 			/*var touchCrap:Function = function(outEvent:String) {return function(ev:MouseEvent) {
 				var e:TouchEvent = new TouchEvent(outEvent, true, false, 1, true, ev.localX, ev.localY, 5, 5);
@@ -217,17 +225,45 @@ package
 			};
 			mouseSurface.addEventListener(MouseEvent.MOUSE_OVER, function(ev:MouseEvent) {
 				//view._mouseIsOverView = true;
-				setvar.setMouseOver(view);
-				i = dm3d.width/3;
-				view.fireMouseEvent(MouseEvent3D.MOUSE_OVER, i, ev.localY);
+				//setvar.setMouseOver(view);
+				view.dispatchEvent(new MouseEvent(MouseEvent.ROLL_OVER));
+				i = -dm3d.width/3;
+				view.fireMouseEvent(MouseEvent3D.MOUSE_OVER, -171, 13/*ev.localY*/);
 			});
 			mouseSurface.addEventListener(MouseEvent.MOUSE_OUT, m3dCrap(MouseEvent3D.MOUSE_OUT));
 			var i:Number = 0;
 			mouseSurface.addEventListener(MouseEvent.MOUSE_MOVE, function(ev:MouseEvent) {
 				i++;
-				view.fireMouseEvent(MouseEvent3D.MOUSE_MOVE, i, ev.localY);
+				//view.fireMouseEvent(MouseEvent3D.MOUSE_MOVE, i, 7/*ev.localY*/);
+				view.fireMouseEvent(MouseEvent3D.MOUSE_MOVE, -171, 13/*ev.localY*/);
+				//dummy();
 			});
-
+			view._screenClipping.maxX += 100;
+			
+			view.addEventListener(MouseEvent.MOUSE_MOVE, function(e:MouseEvent) {
+				debug(view.mouseX + ", " + view.mouseY);
+			});
+			stage.addEventListener(KeyboardEvent.KEY_DOWN, function(e:KeyboardEvent) {
+				dummy2();
+			});
+		}
+		function dummy() {
+			debug("blah");
+		}
+		function dummy2() {
+			//debug("halb");
+			v.findHit(v.session, -171, 13);
+			var evt:MouseEvent3D = v.getMouseEvent(MouseEvent3D.MOUSE_OVER);
+			var blah2:digicrafts.album.DockMenu3D = dm3d.getChildAt(0) as digicrafts.album.DockMenu3D;
+			var screen:Screen3D = blah2.getChildAt(0) as ScreenA3D;
+			//(screen.container.raw as Object3D).dispatchEvent(evt);
+			var mat:MovieMaterial = evt.material as MovieMaterial;
+			if (mat != null) {
+				var btn:SimpleButton = (mat.movie as MovieClip).getChildAt(0) as SimpleButton;
+				btn.upState = btn.overState;
+				(mat.movie as MovieClip).dispatchEvent(new MouseEvent(MouseEvent.ROLL_OVER));
+			}
+			//(evt.object as IEventDispatcher).dispatchEvent(evt);
 		}
 		
 		
