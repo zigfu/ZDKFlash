@@ -368,6 +368,8 @@ package
 			mouseStartX = -dm3d.width / 3;
 			mouseWidth = (dm3d.width * 2) / 3;
 			mouseStartY = 50; //TODO:?
+			
+			view._screenClipping.maxX += 100;
 		}
 		
 		public static function debug(text):void {
