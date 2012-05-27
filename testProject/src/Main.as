@@ -15,6 +15,7 @@ package
 	import flash.events.AsyncErrorEvent;
 	import flash.events.KeyboardEvent;
 	import flash.events.TextEvent;
+	import flash.events.TimerEvent;
 	import flash.external.ExternalInterface;
 	import flash.display.Sprite;
 	import flash.display.Shape;
@@ -39,6 +40,7 @@ package
 	import flash.events.NetStatusEvent;
 	import flash.geom.Matrix;
 	import flash.text.Font;
+	import flash.utils.Timer;
 	
 	import com.zigfu.ZDK;
 	import com.zigfu.UserEvent;
@@ -65,7 +67,7 @@ package
 	 */
 	public class Main extends Sprite 
 	{
-		[Embed(source = "../fonts/verdana.ttf", fontFamily = "embeddedFont", embedAsCFF = "false")] public var embeddedFont:Class;
+		[Embed(source = "../fonts/verdana.ttf", fontFamily = "Arial", embedAsCFF = "false")] public var Arial:Class;
 		
 		var zdk:ZDK;
 		var users:Object;
@@ -89,7 +91,11 @@ package
 		
 		var video:Video;
 		var ns:NetStream;
-
+		
+		var TIMER_TICK_COUNT:Number = 60 * 0.8; // 60 FPS * time in seconds
+		var selectTimer:Timer;
+		var videoToPlay:String;
+		
 		var activeButton:GestureableButton;
 		var overlay:Overlay;
 		
@@ -111,9 +117,18 @@ package
 		var playingProductVideo:Boolean = false; // non idle & activity
 		
 		// These will all go in an external conf file
-		static const IDLE_VIDEO:String = 'Content/Filtrete Interactive Section Loop.f4v';
-		static const ACTIVITY_VIDEO:String = 'Content/Filtrete Interactive Section 1 Shortened.f4v';
+		static const IDLE_VIDEO:String = 'sidVideos/3M SID Standee Loop 1024.f4v';
+		//static const ACTIVITY_VIDEO:String = 'Content/Filtrete Interactive Section 1 Shortened.f4v';
 			
+		var videoFiles = [
+			"sidVideos/3M SID Deep Dive 1 1024.f4v",
+			"sidVideos/3M SID Deep Dive 2 1024.f4v",
+			"sidVideos/3M SID Deep Dive 3 1024.f4v",
+			"sidVideos/3M SID Deep Dive 5 1024.f4v",
+			"sidVideos/3M SID Deep Dive 6 1024.f4v",
+			"sidVideos/3M SID Deep Dive 7 1024.f4v"
+		];
+		
 		private function playVideo(path:String) {
 			ns.play(path);
 		}
@@ -184,7 +199,15 @@ package
 						// deactivate & playidle
 						overlay.deactivate();
 						// TODO: refactor
+						
 						playingProductVideo = false;
+						ns.play(IDLE_VIDEO);
+						playingContent = false;
+						
+						if (zdk.usersCount > 0) {
+							overlay.showSessionPrompt();
+						}
+						/*
 						if (zdk.usersCount == 0) {
 							ns.play(IDLE_VIDEO);
 							playingContent = false;
@@ -192,7 +215,7 @@ package
 							ns.play(ACTIVITY_VIDEO);
 							playingContent = true;
 							overlay.showSessionPrompt();
-						}
+						}*/
 						break;
 				}
 			}
@@ -211,9 +234,10 @@ package
 				{"label":"Benefits", "video":"Content/Filtrete Interactive Section 3.f4v"},
 				{"label":"Installation", "video":"Content/Filtrete Interactive Section 4.f4v" }
 			], function(vid) {
-				playingContent = true;
+				// video selection wont happen through this callback anymore, do nothing
+				/*playingContent = true;
 				playingProductVideo = true;
-				playVideo(vid);
+				playVideo(vid);*/
 			});
 		
 			
@@ -249,7 +273,7 @@ package
 			dm3d.addEventListener(DataSourceEvent.BUFFER_COMPLETE , function(e:Object) { 
 				setTimeout(function() {
 					rotateSprite(dm3d, 270);
-					dm3d.visible = true;
+					//dm3d.visible = true;
 					setTimeout(setupMouse, 500);
 				}, 200);
 			});
@@ -262,27 +286,30 @@ package
 			dm3d.itemHeight = 52;
 			addChild(dm3d);
 			
-			var format:TextFormat = new TextFormat("embeddedFont");
+			var format:TextFormat = new TextFormat("Arial");
 			format.color = 0xFFFFFF;
-			format.size = 32;
+			format.size = 18;
 			format.bold = false;
 			format.align = TextFormatAlign.CENTER;
 			
-			//dm3d.defaultTooltipFormat.;
-			//dm3d.tooltip.label.setTextFormat(format);
 			dm3d.tooltip.label = new TextField();
 			dm3d.tooltip.label.embedFonts = true;
-			dm3d.tooltip.font = "embeddedFont";
+			dm3d.tooltip.font = "Arial";
 			dm3d.tooltip.textFormat = format;
 			dm3d.tooltip.label.setTextFormat(format);
 			dm3d.tooltip.label.defaultTextFormat = format;
 			dm3d.tooltip.addChild(dm3d.tooltip.label);
-			//dm3d.tooltip.label.antiAliasType = AntiAliasType.ADVANCED;
-			//dm3d.tooltip.label.embedFonts = true;
+			dm3d.tooltip.label.antiAliasType = AntiAliasType.ADVANCED;
 			dm3d.visible = false;
 							
+			selectTimer = new Timer(1.0 / 60.0, TIMER_TICK_COUNT);
+			selectTimer.addEventListener(TimerEvent.TIMER_COMPLETE, function() {
+				playVideo(videoToPlay);
+				playingContent = true;
+				playingProductVideo = true;
+			});
+			
 			dm3d.addEventListener(ItemEvent.MOUSE_OVER, function(evt:ItemEvent) {
-				debug("item mouse over");
 				var dockobj:DockMenuObject = evt.obj as DockMenuObject;
 				// move the indicator
 				dockobj.startAnimation();
@@ -291,15 +318,22 @@ package
 				var btn:SimpleButton = mc.getChildAt(0) as SimpleButton;
 				backupState = btn.upState;
 				btn.upState = btn.overState;
+				
+				// start timer
+				videoToPlay = videoFiles[evt.index];
+				selectTimer.reset();
+				selectTimer.start();
 			});
 
 			dm3d.addEventListener(ItemEvent.MOUSE_OUT, function(evt:ItemEvent) {
-				debug("item mouse out");
 				var dockobj:DockMenuObject = evt.obj as DockMenuObject;
 				dockobj.stopAnimation();
 				var mc:MovieClip = dockobj.itemData.source.source.resource as MovieClip;
 				var btn:SimpleButton = mc.getChildAt(0) as SimpleButton;
 				btn.upState = backupState;
+				
+				// stop timer
+				selectTimer.stop();
 			});
 		}
 		
@@ -308,12 +342,14 @@ package
 			
 			if (!zdk.inSession && !playingProductVideo) {
 				overlay.showSessionPrompt();
+				dm3d.visible = false;
 			}
+			/*
 			if (!playingContent) {
 				playVideo(ACTIVITY_VIDEO);
 				playingProductVideo = false;
 				playingContent = true;
-			}
+			}*/
 		}
 		
 		function onUserLost(e:UserEvent) {
@@ -322,6 +358,7 @@ package
 			var usersCount = 0;
 			if (0 == zdk.usersCount) {
 				overlay.hide();
+				dm3d.visible = false;
 			}
 		}
 		
@@ -336,7 +373,8 @@ package
 		function onSessionStart(e:SessionEvent) {
 			Track.track('sessionstart', { 'userid' : e.UserId});
 			
-			//overlay.showButtons();
+			overlay.hide();
+			dm3d.visible = true;
 			
 			// fake mouse over in a way that doesn't check internally whether the mouse is actually
 			// hovering over the control in a way we can't intercept
@@ -365,13 +403,13 @@ package
 				cont.onsessionend();
 			});
 		
-			/*
+			dm3d.visible = false;
 			if (!playingProductVideo) {
 				overlay.showSessionPrompt();
 			} else {
 				overlay.hide();
-			}*/
-		}7
+			}
+		}
 		
 		function setupMouse() {
 			view = ((dm3d.getChildAt(0) as digicrafts.album.DockMenu3D).getChildAt(0) as Screen3D).getChildAt(0) as View3D;
