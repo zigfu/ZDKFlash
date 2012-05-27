@@ -1,5 +1,7 @@
 package 
 {
+	import digicrafts.album.screenobject.away3d.DockMenuObject;
+	import flash.display.MovieClip;
 	import digicrafts.events.ItemEvent;
 	import digicrafts.events.DataSourceEvent;
 	import digicrafts.events.HCIManagerEvent;
@@ -7,6 +9,7 @@ package
 	import digicrafts.events.ResourceLoaderEvent;
 	import flash.display.Bitmap;
 	import flash.display.BitmapData;
+	import flash.display.DisplayObject;
 	import flash.display.DisplayObjectContainer;
 	import flash.display.Shader;
 	import flash.events.AsyncErrorEvent;
@@ -48,6 +51,13 @@ package
 	import digicrafts.album.screen.Screen3D;
 	import digicrafts.album.DockMenu3D;
 	import away3d.events.MouseEvent3D;
+	import away3d.core.base.Object3D;
+	import away3d.core.project.MovieClipSpriteProjector;
+	import away3d.events.MouseEvent3D;
+	import away3d.materials.MovieMaterial;
+
+	import away3d.arcane; 
+	use namespace arcane;
 	
 	/**
 	 * ...
@@ -94,6 +104,8 @@ package
 		var mouseWidth:Number;
 		var mouseStartY:Number;
 		
+		var activeSimpleButton:SimpleButton;
+		var backupState:DisplayObject;
 		
 		var playingContent:Boolean = false; // non idle
 		var playingProductVideo:Boolean = false; // non idle & activity
@@ -221,7 +233,6 @@ package
 			});
 			fader.addEventListener(FaderEvent.VALUECHANGE, function(fe:FaderEvent) {
 				//overlay.visualizeFader(fe.fader.value);
-				//dm3d.dispatchEvent(new MouseEvent(MouseEvent.MOUSE_MOVE, true, false, 0.5 * dm3d.width, dm3d.height * fe.fader.value));
 				view.fireMouseEvent(MouseEvent3D.MOUSE_MOVE, mouseStartX + fe.fader.value * mouseWidth, mouseStartY);
 			});
 			
@@ -260,7 +271,7 @@ package
 			//dm3d.defaultTooltipFormat.;
 			//dm3d.tooltip.label.setTextFormat(format);
 			dm3d.tooltip.label = new TextField();
-			//dm3d.tooltip.label.embedFonts = true;
+			dm3d.tooltip.label.embedFonts = true;
 			dm3d.tooltip.font = "embeddedFont";
 			dm3d.tooltip.textFormat = format;
 			dm3d.tooltip.label.setTextFormat(format);
@@ -269,28 +280,27 @@ package
 			//dm3d.tooltip.label.antiAliasType = AntiAliasType.ADVANCED;
 			//dm3d.tooltip.label.embedFonts = true;
 			dm3d.visible = false;
-					
-			
-			dm3d.addEventListener(HCIManagerEvent.TOUCH_DOWN, function(e:Object) {
-				debug("down " + e.localX);
+							
+			dm3d.addEventListener(ItemEvent.MOUSE_OVER, function(evt:ItemEvent) {
+				debug("item mouse over");
+				var dockobj:DockMenuObject = evt.obj as DockMenuObject;
+				// move the indicator
+				dockobj.startAnimation();
+				// start button animation
+				var mc:MovieClip = dockobj.itemData.source.source.resource as MovieClip;
+				var btn:SimpleButton = mc.getChildAt(0) as SimpleButton;
+				backupState = btn.upState;
+				btn.upState = btn.overState;
 			});
-			
-			dm3d.addEventListener(HCIManagerEvent.TOUCH_UP, function(e:Object) {
-				debug("up " + e.localX);
+
+			dm3d.addEventListener(ItemEvent.MOUSE_OUT, function(evt:ItemEvent) {
+				debug("item mouse out");
+				var dockobj:DockMenuObject = evt.obj as DockMenuObject;
+				dockobj.stopAnimation();
+				var mc:MovieClip = dockobj.itemData.source.source.resource as MovieClip;
+				var btn:SimpleButton = mc.getChildAt(0) as SimpleButton;
+				btn.upState = backupState;
 			});
-			
-			dm3d.addEventListener(HCIManagerEvent.MOVE, function(e:Object) {
-				debug("move " + e.localX);
-			});
-			
-			dm3d.addEventListener(Event.MOUSE_LEAVE, function(e:Object) {
-				debug("mouse leave");
-			});
-			
-			//stage.addEventListener(KeyboardEvent.KEY_DOWN, function(e:KeyboardEvent) {
-			//	rotateSprite(dm3d, 270);
-			//	dm3d.visible = true;
-			//});
 		}
 		
 		function onUserFound(e:UserEvent) {
@@ -361,14 +371,13 @@ package
 			} else {
 				overlay.hide();
 			}*/
-		}
+		}7
 		
 		function setupMouse() {
 			view = ((dm3d.getChildAt(0) as digicrafts.album.DockMenu3D).getChildAt(0) as Screen3D).getChildAt(0) as View3D;
 			mouseStartX = -dm3d.width / 3;
 			mouseWidth = (dm3d.width * 2) / 3;
-			mouseStartY = 50; //TODO:?
-			
+			mouseStartY = 0;
 			view._screenClipping.maxX += 100;
 		}
 		
